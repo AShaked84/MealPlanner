@@ -4,12 +4,6 @@ from recipe_scrapers import scrape_me
 import pint
 ureg = pint.UnitRegistry()
 
-units = [
-    "lb", "Tbsp", "tsp", "cloves",
-    "cup", "cups", "oz", "ounce", "ounces",
-    "g", "kg", "ml", "l"
-]
-
 #scrape recipe from card. Function recieves a url string and returns a json file of all of the data the recipe card has to offer. go wild.
 def recipe_scraper(url):
     scraper = scrape_me(url)
@@ -39,7 +33,7 @@ def listCleaner(ingredients):
         amount = 1
 
         for i, word in enumerate(words):
-            if IL.is_number_or_fraction(word):
+            if is_number_or_fraction(word):
                 amount = float(Fraction(word))
             elif word.rstrip(".") in ureg:
                 unit = word.rstrip(".")
@@ -55,10 +49,9 @@ def groceryList(ingredients, default_servings, required_servings):
     ingredient_dict = listCleaner(ingredients)
     serving_factor = required_servings/default_servings
 
-    for ingredient in ingredient_dict.values():
-        ingredient["amount"] = ingredient["amount"] * serving_factor
+    scaled_ingredients = {key: value * serving_factor for key, value in ingredient_dict.items()}
 
-    return ingredient_dict
+    return scaled_ingredients
 
 #convert all units into mg and ml, for ease of use. later iterations can have user chose their prefered units    
 
