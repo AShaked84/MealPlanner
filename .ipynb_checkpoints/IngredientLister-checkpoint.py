@@ -1,11 +1,11 @@
 from fractions import Fraction
 from collections import defaultdict
 from recipe_scrapers import scrape_me
-
-
+import pint
+ureg = pint.UnitRegistry()
 
 units = [
-    "lb", "lb.", "Tbsp", "tsp", "cloves",
+    "lb", "Tbsp", "tsp", "cloves",
     "cup", "cups", "oz", "ounce", "ounces",
     "g", "kg", "ml", "l"
 ]
@@ -45,11 +45,12 @@ def listCleaner(ingredients):
             if is_number_or_fraction(word):
                 amount = float(Fraction(word))
             elif word.rstrip(".") in units:
-                unit = word
+                unit = word.rstrip(".")
             else:
                 ingredient = " ".join(words[i:])
                 break
-
+#save values as pint units isntead of a smaller dictionary, could simplify
+        #define units that dont show up in the regulatory units. clove, item...
         ingredientDict[ingredient] = dict(amount=amount, unit=unit)
 
     return ingredientDict
@@ -62,6 +63,8 @@ def groceryList(ingredients, default_servings, required_servings):
         ingredient["amount"] = ingredient["amount"] * serving_factor
 
     return ingredient_dict
+
+#convert all units into mg and ml, for ease of use. later iterations can have user chose their prefered units    
 
 def combineLists(dict_list):
     result = defaultdict(int)

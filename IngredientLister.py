@@ -1,11 +1,11 @@
 from fractions import Fraction
 from collections import defaultdict
 from recipe_scrapers import scrape_me
-
-
+import pint
+ureg = pint.UnitRegistry()
 
 units = [
-    "lb", "lb.", "Tbsp", "tsp", "cloves",
+    "lb", "Tbsp", "tsp", "cloves",
     "cup", "cups", "oz", "ounce", "ounces",
     "g", "kg", "ml", "l"
 ]
@@ -27,30 +27,27 @@ def is_number_or_fraction(word):
     except ValueError:
         return False
 
-#function recieves a list of ingredients (string), splits it into a dictionary with ingredient(string):{amount: float, unit: string}
+#function recieves a list of ingredients (string), splits it into a dictionary with ingredient(string):PINT Quantity(float, string)
 def listCleaner(ingredients):
     ingredientDict = {}
     for item in ingredients:
-        #remove extra characters and split into words
         item = item.split(" ($")[0]
         item = item.replace("*", "")
         words = item.split()
 
-        unit = ""
+        unit = "count"
         amount = 1
 
-        #divide based on where the number is
-        #default empty string for unit in case ingredient doesn't have one
         for i, word in enumerate(words):
-            if is_number_or_fraction(word):
+            if IL.is_number_or_fraction(word):
                 amount = float(Fraction(word))
-            elif word.rstrip(".") in units:
-                unit = word
+            elif word.rstrip(".") in ureg:
+                unit = word.rstrip(".")
             else:
                 ingredient = " ".join(words[i:])
                 break
 
-        ingredientDict[ingredient] = dict(amount=amount, unit=unit)
+        ingredientDict[ingredient] = amount * getattr(ureg, unit)
 
     return ingredientDict
 
@@ -62,6 +59,8 @@ def groceryList(ingredients, default_servings, required_servings):
         ingredient["amount"] = ingredient["amount"] * serving_factor
 
     return ingredient_dict
+
+#convert all units into mg and ml, for ease of use. later iterations can have user chose their prefered units    
 
 def combineLists(dict_list):
     result = defaultdict(int)
