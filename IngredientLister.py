@@ -1,5 +1,5 @@
 from fractions import Fraction
-from collections import defaultdict
+from collections import defaultdict, Counter
 from recipe_scrapers import scrape_me
 import pint
 ureg = pint.UnitRegistry()
@@ -56,11 +56,11 @@ def groceryList(ingredients, default_servings, required_servings):
 #convert all units into mg and ml, for ease of use. later iterations can have user chose their prefered units    
 
 def combineLists(dict_list):
-    result = defaultdict(int)
-    for dic in dict_list:
-        for key, value in dic.items():
-            result[key] += value["amount"]
-            print(key, value["amount"])
+    master_list = Counter()
 
-    final_dict = dict(result)
-    return final_dict
+    for d in dict_list:
+        master_list.update(d)
+
+    result = dict(master_list)
+
+    return result
