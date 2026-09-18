@@ -2,18 +2,20 @@ from fractions import Fraction
 from collections import defaultdict, Counter
 from recipe_scrapers import scrape_me
 import pint
+import re
 ureg = pint.UnitRegistry()
 
-#scrape recipe from card. Function recieves a url string and returns a json file of all of the data the recipe card has to offer. go wild.
+#scrape recipe from card. Function recieves a url string and returns a json file 
 def recipe_scraper(url):
     scraper = scrape_me(url)
     scraper.title()
     scraper.instructions()
     json_data = scraper.to_json()
-    return json_data
+    return json_data["ingredient_groups"][0]["ingredients"]
     
 
 #function recieves a string, returns a boolean on whether it is a number, includes fractions ("1/4") and decimals ("3.14")
+#used to find quantities
 def is_number_or_fraction(word):
     try:
         Fraction(word)
@@ -27,6 +29,7 @@ def listCleaner(ingredients):
     for item in ingredients:
         item = item.split(" ($")[0]
         item = item.replace("*", "")
+        item = re.sub(r"\([^)]*\)", "", item)
         words = item.split()
 
         unit = "count"
@@ -45,6 +48,7 @@ def listCleaner(ingredients):
 
     return ingredientDict
 
+#function recieves a list of ingredients (string), the number of servings the recipe yields as written, and the number of servings the user wants in practice. The list is ran through the listCleaner function to create a dictionary(see above), and the amounts are adjusted to suit user needs.
 def groceryList(ingredients, default_servings, required_servings):
     ingredient_dict = listCleaner(ingredients)
     serving_factor = required_servings/default_servings
@@ -53,8 +57,8 @@ def groceryList(ingredients, default_servings, required_servings):
 
     return scaled_ingredients
 
-#convert all units into mg and ml, for ease of use. later iterations can have user chose their prefered units    
-
+#function recieves a list of cleaned dictionaries (after listCleaner) and returns a master dictionary of all the ingredients added up. 
+#need a solution for similarly worded ingredients (ie lemon vs. fresh lemon) and items "to taste" (ie salt and pepper)
 def combineLists(dict_list):
     master_list = Counter()
 
