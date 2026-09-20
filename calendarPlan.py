@@ -1,16 +1,28 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 
-today = datetime.today().date()
+def calendarMaker():
+    start_date = date.today()
 
-# strftime("%w") returns 0 for Sunday, 1 for Monday... up to 6 for Saturday
-days_since_sunday = int(today.strftime("%w"))
-start_of_week = today - timedelta(days=days_since_sunday)
+    meal_plan = {}
+    
+    for i in range(7):
+        day = start_date + timedelta(days=i)
+    
+        meal_plan[day] = {
+            "breakfast": None,
+            "lunch": None,
+            "dinner": None
+    }
 
-# Generate all 7 days of the week
-this_week = [start_of_week + timedelta(days=i) for i in range(7)]
+    return meal_plan
 
-print(f"--- Week of {start_of_week} (Sunday Start) ---")
-for day in this_week:
-    print(f"{day.strftime('%A')}: {day}")
-
-#how many servings do we have of each 
+def addMeal(meal_plan, date, meal, recipe_id):
+    connection = sqlite3.connect("database/movies.db")
+    cursor = connection.cursor()
+    result = cursor.execute("SELECT * FROM RecipeBook WHERE ID = ?", [recipe_id])
+    recipe = result.fetchall()
+    
+    print(recipe[1])
+    
+    #how many servings do we have of each 
+    
