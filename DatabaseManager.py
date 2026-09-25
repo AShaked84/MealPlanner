@@ -21,7 +21,9 @@ def addRecipe(url):
 def listRecipes():
     result = cursor.execute("SELECT * FROM Recipes")
     recipes = result.fetchall()
+    recipe_list = []
 
     for recipe in recipes:
         print(str(recipe[0]) + " - ", recipe[1])
-    return recipes
+        recipe_list.append(str(recipe[0]) + " - " + recipe[1])
+    return recipe_list

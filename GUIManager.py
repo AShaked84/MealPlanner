@@ -2,6 +2,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtWidgets import QMessageBox, QLineEdit, QListWidget
 
 import DatabaseManager as DM
+import IngredientLister as IL
 
 
 class Ui_MainWindow(object):
@@ -45,8 +46,10 @@ class Ui_MainWindow(object):
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
         self.AddRecipeButton.clicked.connect(self.add_recipe_lineEdit)
-        #self.SeeRecipesButton.clicked.connect(DM.listRecipes)
+        #self.AddRecipeButton.clicked.connect(self.recipe_list.hide())
         self.SeeRecipesButton.clicked.connect(self.add_recipe_list)
+        #self.SeeRecipesButton.clicked.connect(self.recipe_list.hide())
+        #self.ShoppingListButton.clicked.connect(self.add_shopping_list)
 
     def add_recipe_lineEdit(self):
         self.recipe_input_field = QLineEdit(parent = self.centralwidget)
@@ -60,9 +63,16 @@ class Ui_MainWindow(object):
     def add_recipe_list(self):
         recipe_list = QListWidget(parent = self.centralwidget)
         recipe_list.addItems(DM.listRecipes())
-        recipe_list.setGeometry(460, 40, 150, 200)
+        recipe_list.setGeometry(350, 160, 150, 200)
         recipe_list.show()
-    
+
+    """def add_shopping_list(self)
+        shopping_list = QListWidget(parent = self.centralwidget)
+        shopping_dictionary = IL.
+        recipe_list.addItems(DM.listRecipes())
+        recipe_list.setGeometry(350, 160, 150, 200)
+        recipe_list.show()
+    """
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))

@@ -11,9 +11,8 @@ def recipe_scraper(url):
     scraper.title()
     scraper.instructions()
     json_data = scraper.to_json()
-    return json_data["ingredient_groups"][0]["ingredients"]
+    return json_data#["ingredient_groups"][0]["ingredients"]
     
-
 #function recieves a string, returns a boolean on whether it is a number, includes fractions ("1/4") and decimals ("3.14")
 #used to find quantities
 def is_number_or_fraction(word):
