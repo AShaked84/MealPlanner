@@ -24,3 +24,4 @@ def listRecipes():
 
     for recipe in recipes:
         print(str(recipe[0]) + " - ", recipe[1])
+    return recipes
