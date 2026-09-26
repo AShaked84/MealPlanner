@@ -1,5 +1,5 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtWidgets import QMessageBox, QLineEdit, QListWidget
+from PyQt6.QtWidgets import QMessageBox, QLineEdit, QListWidget, QInputDialog
 
 import DatabaseManager as DM
 import IngredientLister as IL
@@ -18,12 +18,12 @@ class Ui_MainWindow(object):
         self.horizontalLayout = QtWidgets.QHBoxLayout(self.horizontalLayoutWidget)
         self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
         self.horizontalLayout.setObjectName("horizontalLayout")
-        self.ChangeMealPlanButton = QtWidgets.QPushButton(parent=self.horizontalLayoutWidget)
-        self.ChangeMealPlanButton.setObjectName("ChangeMealPlanButton")
-        self.horizontalLayout.addWidget(self.ChangeMealPlanButton)
-        self.AddRecipeButton = QtWidgets.QPushButton(parent=self.horizontalLayoutWidget)
-        self.AddRecipeButton.setObjectName("AddRecipeButton")
-        self.horizontalLayout.addWidget(self.AddRecipeButton)
+        self.AddMyRecipeButton = QtWidgets.QPushButton(parent=self.horizontalLayoutWidget)
+        self.AddMyRecipeButton.setObjectName("AddMyRecipeButton")
+        self.horizontalLayout.addWidget(self.AddMyRecipeButton)
+        self.AddURLRecipeButton = QtWidgets.QPushButton(parent=self.horizontalLayoutWidget)
+        self.AddURLRecipeButton.setObjectName("AddURLRecipeButton")
+        self.horizontalLayout.addWidget(self.AddURLRecipeButton)
         self.SeeRecipesButton = QtWidgets.QPushButton(parent=self.horizontalLayoutWidget)
         self.SeeRecipesButton.setObjectName("SeeRecipesButton")
         self.horizontalLayout.addWidget(self.SeeRecipesButton)
@@ -45,26 +45,32 @@ class Ui_MainWindow(object):
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
-        self.AddRecipeButton.clicked.connect(self.add_recipe_lineEdit)
-        #self.AddRecipeButton.clicked.connect(self.recipe_list.hide())
+        self.AddURLRecipeButton.clicked.connect(self.add_recipe_URL_lineEdit)
+        self.AddMyRecipeButton.clicked.connect(self.add_my_recipe_inputDialogue)
         self.SeeRecipesButton.clicked.connect(self.add_recipe_list)
-        #self.SeeRecipesButton.clicked.connect(self.recipe_list.hide())
-        #self.ShoppingListButton.clicked.connect(self.add_shopping_list)
 
-    def add_recipe_lineEdit(self):
-        self.recipe_input_field = QLineEdit(parent = self.centralwidget)
+    def add_recipe_URL_lineEdit(self):
+        """self.recipe_input_field = QLineEdit(parent = self.centralwidget)
         add_new_recipe = QtWidgets.QPushButton(parent = self.centralwidget)
         self.recipe_input_field.setGeometry(40, 100, 200, 40)
         add_new_recipe.setGeometry(250, 100, 40, 40)
         self.recipe_input_field.show()
         add_new_recipe.show()
-        add_new_recipe.clicked.connect(lambda checked: DM.addRecipe(self.recipe_input_field.text()))
+        add_new_recipe.clicked.connect(lambda checked: DM.addRecipe(self.recipe_input_field.text()))"""
+        text, ok = QInputDialog.getText(self.centralwidget, "text input", "enter data")
+        if ok and text:
+            DM.addRecipe(text)
 
     def add_recipe_list(self):
         recipe_list = QListWidget(parent = self.centralwidget)
         recipe_list.addItems(DM.listRecipes())
         recipe_list.setGeometry(350, 160, 150, 200)
         recipe_list.show()
+
+    def add_my_recipe_inputDialogue(self):
+        text, ok = QInputDialog.getText(self.centralwidget, "text input", "enter data")
+        if ok and text:
+            print(text)
 
     """def add_shopping_list(self)
         shopping_list = QListWidget(parent = self.centralwidget)
@@ -76,8 +82,8 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
-        self.ChangeMealPlanButton.setText(_translate("MainWindow", "Change Meal Plan"))
-        self.AddRecipeButton.setText(_translate("MainWindow", "Add Recipe"))
+        self.AddMyRecipeButton.setText(_translate("MainWindow", "Add Recipe Manually"))
+        self.AddURLRecipeButton.setText(_translate("MainWindow", "Add Recipe with URL"))
         self.SeeRecipesButton.setText(_translate("MainWindow", "See Recipes"))
         self.ShoppingListButton.setText(_translate("MainWindow", "Shopping List"))
 
