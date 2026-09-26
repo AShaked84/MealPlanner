@@ -98,7 +98,7 @@ class Ui_MainWindow(object):
         form_layout.addRow(button_layout)
 
         cancel_button.clicked.connect(recipe_form.close)
-        submit_button.clicked.connect(lambda: (print(self.recipe_name_input.text(), self.serving_size_input.text(), self.ingredients_input.toPlainText()), recipe_form.close()))
+        submit_button.clicked.connect(lambda: DM.addRecipe([self.recipe_name_input.text(), self.serving_size_input.text(), self.ingredients_input.toPlainText()]))
         
         recipe_form.exec()
         

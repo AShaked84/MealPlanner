@@ -6,17 +6,25 @@ import IngredientLister as IL
 connection = sqlite3.connect("Database/RecipeBook.db")
 cursor = connection.cursor()
 
-def addRecipe(url):
-    json_data = IL.recipe_scraper(url)
-    name = json_data['title']
-    servings = int(json_data['yields'][0])
-    #at some point I should turn this into another database, probably. Keeping it simple for the time being for a proof of concept.
-    ingredients = json.dumps(json_data["ingredient_groups"][0]["ingredients"])
-    url = json_data['canonical_url']
+#function will recieve either a link to a recipe or a string with the recipe information [recipe title, servings, ingredients] and add the recipe to the database
+def addRecipe(recipe: str | list[str]):
+    if isinstance(recipe, str):
+        json_data = IL.recipe_scraper(recipe)
+        name = json_data['title']
+        servings = int(json_data['yields'][0])
+        #at some point I should turn this into another database, probably. Keeping it simple for the time being for a proof of concept.
+        ingredients = json.dumps(json_data["ingredient_groups"][0]["ingredients"])
+        url = json_data['canonical_url']
+        data = [name, servings, ingredients, url]
 
-    data = [name, servings, ingredients, url]
+    elif isinstance(recipe, list):
+        recipe.append(None)
+        data = recipe
+
     cursor.execute("INSERT INTO 'Recipes' ('RecipeName', 'Servings', 'Ingredients', 'URL') VALUES (?,?,?,?)", data)
     connection.commit()
+
+
 
 def listRecipes():
     result = cursor.execute("SELECT * FROM Recipes")
