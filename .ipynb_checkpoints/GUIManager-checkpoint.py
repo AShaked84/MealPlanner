@@ -1,5 +1,6 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtWidgets import QMessageBox, QLineEdit, QListWidget, QInputDialog
+from PyQt6.QtWidgets import QMessageBox, QLineEdit, QListWidget, QInputDialog, QFormLayout, QDialog, QPushButton, QHBoxLayout, QTextEdit
+from PyQt6.QtGui import QIntValidator
 
 import DatabaseManager as DM
 import IngredientLister as IL
@@ -46,7 +47,7 @@ class Ui_MainWindow(object):
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
         self.AddURLRecipeButton.clicked.connect(self.add_recipe_URL_lineEdit)
-        self.AddMyRecipeButton.clicked.connect(self.add_my_recipe_inputDialogue)
+        self.AddMyRecipeButton.clicked.connect(self.add_my_recipe_form)
         self.SeeRecipesButton.clicked.connect(self.add_recipe_list)
 
     def add_recipe_URL_lineEdit(self):
@@ -57,7 +58,7 @@ class Ui_MainWindow(object):
         self.recipe_input_field.show()
         add_new_recipe.show()
         add_new_recipe.clicked.connect(lambda checked: DM.addRecipe(self.recipe_input_field.text()))"""
-        text, ok = QInputDialog.getText(self.centralwidget, "text input", "enter data")
+        text, ok = QInputDialog.getText(self.centralwidget, "Add Recipe URL", "Enter Recipe URL: ")
         if ok and text:
             DM.addRecipe(text)
 
@@ -67,11 +68,40 @@ class Ui_MainWindow(object):
         recipe_list.setGeometry(350, 160, 150, 200)
         recipe_list.show()
 
-    def add_my_recipe_inputDialogue(self):
-        text, ok = QInputDialog.getText(self.centralwidget, "text input", "enter data")
-        if ok and text:
-            print(text)
+    def add_my_recipe_form(self):
+        recipe_form = QDialog(parent = self.centralwidget)
+        recipe_form.setWindowTitle("Add Recipe Manually")
 
+        form_layout = QFormLayout(parent = recipe_form)
+        
+        self.recipe_name_input = QLineEdit(parent = recipe_form)
+        self.recipe_name_input.setPlaceholderText("Enter recipe title")
+        
+        self.serving_size_input = QLineEdit(parent = recipe_form)
+        self.serving_size_input.setValidator(QIntValidator(1, 100))
+        self.serving_size_input.setPlaceholderText("Enter number of servings")
+
+        self.ingredients_input = QtWidgets.QTextEdit(parent = recipe_form)
+        self.ingredients_input.setPlaceholderText("1 block of tofu, 2 limes, 3 tablespoons olive oil")
+
+        form_layout.addRow("Title: ", self.recipe_name_input)
+        form_layout.addRow("Servings: ", self.serving_size_input)
+        form_layout.addRow("ingredients: ", self.ingredients_input)
+
+        submit_button = QPushButton("Save Recipe")
+        cancel_button = QPushButton("Cancel")
+
+        button_layout = QHBoxLayout()
+        button_layout.addWidget(submit_button)
+        button_layout.addWidget(cancel_button)
+        
+        form_layout.addRow(button_layout)
+
+        cancel_button.clicked.connect(recipe_form.close)
+        submit_button.clicked.connect(lambda: (print(self.recipe_name_input.text(), self.serving_size_input.text(), self.ingredients_input.toPlainText()), recipe_form.close()))
+        
+        recipe_form.exec()
+        
     """def add_shopping_list(self)
         shopping_list = QListWidget(parent = self.centralwidget)
         shopping_dictionary = IL.
