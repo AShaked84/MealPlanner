@@ -1,6 +1,7 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtWidgets import QMessageBox, QLineEdit, QListWidget, QInputDialog, QFormLayout, QDialog, QPushButton, QHBoxLayout, QTextEdit
 from PyQt6.QtGui import QIntValidator
+import json
 
 import DatabaseManager as DM
 import IngredientLister as IL
@@ -98,7 +99,7 @@ class Ui_MainWindow(object):
         form_layout.addRow(button_layout)
 
         cancel_button.clicked.connect(recipe_form.close)
-        submit_button.clicked.connect(lambda: DM.addRecipe([self.recipe_name_input.text(), self.serving_size_input.text(), self.ingredients_input.toPlainText()]))
+        submit_button.clicked.connect(lambda: DM.addRecipe([self.recipe_name_input.text(), self.serving_size_input.text(), json.dumps(self.ingredients_input.toPlainText().split(','))]))
         
         recipe_form.exec()
         

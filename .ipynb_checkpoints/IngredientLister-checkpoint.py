@@ -26,6 +26,7 @@ def is_number_or_fraction(word):
 def listCleaner(ingredients):
     ingredientDict = {}
     for item in ingredients:
+        item = item.strip()
         item = item.split(" ($")[0]
         item = item.replace("*", "")
         item = re.sub(r"\([^)]*\)", "", item)
