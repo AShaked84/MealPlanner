@@ -1,6 +1,7 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtWidgets import QMessageBox, QLineEdit, QListWidget, QInputDialog, QFormLayout, QDialog, QPushButton, QHBoxLayout, QTextEdit
+from PyQt6.QtWidgets import QMessageBox, QLineEdit, QListWidget, QInputDialog, QFormLayout, QDialog, QPushButton, QHBoxLayout, QVBoxLayout, QTextEdit
 from PyQt6.QtGui import QIntValidator
+from PyQt6.QtCore import QDate
 import json
 
 import DatabaseManager as DM
@@ -51,6 +52,52 @@ class Ui_MainWindow(object):
         self.AddMyRecipeButton.clicked.connect(self.add_my_recipe_form)
         self.SeeRecipesButton.clicked.connect(self.add_recipe_list)
 
+        self.calendarWidget.clicked.connect(self.date_clicked)
+
+    def date_clicked(self, date: QDate):
+        date_string = date.toString("dd-MM-yyyy")
+        date_dialog = QDialog(parent = self.centralwidget)
+        date_dialog.setWindowTitle(f'{date_string} Meal Plan')
+
+        meal_type_list = ["Breakfast", "Lunch", "Dinner", "Snacks"]
+
+        window_layout = QVBoxLayout()
+        lists_layout = QHBoxLayout()
+        meal_type_layout = QVBoxLayout()
+        recipe_list_layout = QVBoxLayout()
+
+        meal_list = QListWidget()
+        meal_type_layout.addWidget(meal_list)
+        meal_list.addItems(meal_type_list)
+
+        recipe_list = QListWidget()
+        recipe_list.addItems(DM.listRecipes())
+        recipe_list.hide()
+        recipe_list_layout.addWidget(recipe_list)
+
+        lists_layout.addLayout(meal_type_layout)
+        lists_layout.addLayout(recipe_list_layout)
+
+        button_layout = QHBoxLayout()
+        save_button = QPushButton("Save")
+        cancel_button = QPushButton("Cancel")
+        button_layout.addWidget(save_button)
+        button_layout.addWidget(cancel_button)
+
+        window_layout.addLayout(lists_layout)
+        window_layout.addLayout(button_layout)
+        date_dialog.setLayout(window_layout)
+
+        meal_list.itemClicked.connect(lambda item: recipe_list.show())
+
+        save_button.clicked.connect(lambda: DM.)
+        cancel_button.clicked.connect(date_dialog.reject)
+        
+        date_dialog.exec()
+
+    def initialize_app(self):
+        self.meal_plan = DM.getMealPlan()
+
     def add_recipe_URL_lineEdit(self):
         """self.recipe_input_field = QLineEdit(parent = self.centralwidget)
         add_new_recipe = QtWidgets.QPushButton(parent = self.centralwidget)
@@ -99,7 +146,17 @@ class Ui_MainWindow(object):
         form_layout.addRow(button_layout)
 
         cancel_button.clicked.connect(recipe_form.close)
-        submit_button.clicked.connect(lambda: DM.addRecipe([self.recipe_name_input.text(), self.serving_size_input.text(), json.dumps(self.ingredients_input.toPlainText().split(','))]))
+        #submit_button.clicked.connect(lambda: (DM.addRecipe([self.recipe_name_input.text(), self.serving_size_input.text(), json.dumps(self.ingredients_input.toPlainText().split(','))])), recipe_form.close)
+        submit_button.clicked.connect(
+    lambda: (
+        DM.addRecipe([
+            self.recipe_name_input.text(), 
+            self.serving_size_input.text(), 
+            json.dumps(self.ingredients_input.toPlainText().split(','))
+        ]), 
+        recipe_form.close()
+    )
+)
         
         recipe_form.exec()
         

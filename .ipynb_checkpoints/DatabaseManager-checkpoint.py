@@ -1,13 +1,23 @@
 import sqlite3
 import json
+import pandas as pd
 
 import IngredientLister as IL
 
-connection = sqlite3.connect("Database/RecipeBook.db")
-cursor = connection.cursor()
+#get the meal plan table to initialize the app and turn it into a pandas database
+def getMealPlan():
+    connection = sqlite3.connect("Database/RecipeBook.db")
+    cursor = connection.cursor()
+    
+    meal_plan = pd.read_sql_query("SELECT * FROM MealPlan", connection)
+
+    return meal_plan
 
 #function will recieve either a link to a recipe or a string with the recipe information [recipe title, servings, ingredients] and add the recipe to the database
 def addRecipe(recipe: str | list[str]):
+    connection = sqlite3.connect("Database/RecipeBook.db")
+    cursor = connection.cursor()
+
     if isinstance(recipe, str):
         json_data = IL.recipe_scraper(recipe)
         name = json_data['title']
@@ -27,6 +37,8 @@ def addRecipe(recipe: str | list[str]):
 
 
 def listRecipes():
+    connection = sqlite3.connect("Database/RecipeBook.db")
+    cursor = connection.cursor()
     result = cursor.execute("SELECT * FROM Recipes")
     recipes = result.fetchall()
     recipe_list = []
