@@ -32,6 +32,6 @@ def listRecipes():
     recipe_list = []
 
     for recipe in recipes:
-        print(str(recipe[0]) + " - ", recipe[1])
+        #print(str(recipe[0]) + " - ", recipe[1])
         recipe_list.append(str(recipe[0]) + " - " + recipe[1])
     return recipe_list

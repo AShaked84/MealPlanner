@@ -1,6 +1,17 @@
 from datetime import datetime, timedelta, date
+import numpy as np
+import pandas as pd
 
-#creates a calendar for this week, starting sunday, with a space to add a recipe for each meal
+#create a meal plan dataframe
+meal_plan = pd.DataFrame({
+    "date": [],
+    "meal": [],
+    "recipe_id": []
+})
+
+#add new meal component
+
+"""#creates a calendar for this week, starting sunday, with a space to add a recipe for each meal
 #recipe saved as id number
 #output: {datetime.date:{string:int, string:int, string:int}, ...}
 def calendarMaker():
@@ -29,5 +40,5 @@ def addMeal(meal_plan, date, meal, recipe_id):
     
     meal_plan[date][meal] = recipe[0]
     
-    #how many servings do we have of each 
+    #how many servings do we have of each """
     
