@@ -84,10 +84,22 @@ class Ui_MainWindow(object):
         self.snacksLayout.addWidget(self.snacksLabel)
         self.snacksLayout.addWidget(self.snacksList)
 
+        self.changeMealPlanButton = QtWidgets.QPushButton(parent=self.menuWidget)
+        self.changeMealPlanButton.setObjectName("changeMealPlanButton")
+        self.changeMealPlanButton.setText("Change Meal Plan")
+
+        self.removeDishButton = QtWidgets.QPushButton(parent=self.menuWidget)
+        self.removeDishButton.setObjectName("removeDishButton")
+        self.removeDishButton.setText("Remove Dish")
+
         self.menuLayout.addLayout(self.breakfastLayout)
         self.menuLayout.addLayout(self.lunchLayout)
         self.menuLayout.addLayout(self.dinnerLayout)
         self.menuLayout.addLayout(self.snacksLayout)
+        self.menuLayout.addWidget(self.changeMealPlanButton)
+        self.menuLayout.addWidget(self.removeDishButton)
+        self.changeMealPlanButton.hide()
+        self.removeDishButton.hide()
         
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(parent=MainWindow)
@@ -103,11 +115,29 @@ class Ui_MainWindow(object):
 
         self.AddURLRecipeButton.clicked.connect(self.add_recipe_URL_lineEdit)
         self.AddMyRecipeButton.clicked.connect(self.add_my_recipe_form)
-        self.SeeRecipesButton.clicked.connect(self.add_recipe_list)
+        #self.SeeRecipesButton.clicked.connect(self.add_recipe_list)
+        self.changeMealPlanButton.clicked.connect(self.fill_meal)
+        self.removeDishButton.clicked.connect(self.remove_meal)
 
         self.calendarWidget.clicked.connect(self.date_clicked)
 
+        self.breakfastList.itemClicked.connect(self.recipe_selected)
+        self.lunchList.itemClicked.connect(lambda item: print(item.data(Qt.ItemDataRole.UserRole)))
+        self.dinnerList.itemClicked.connect(lambda item: print(item.data(Qt.ItemDataRole.UserRole)))
+        self.snacksList.itemClicked.connect(lambda item: print(item.data(Qt.ItemDataRole.UserRole)))
+
+    def recipe_selected(self, item):
+        self.removeDishButton.show()
+        self.selected_dish = item
+
+    def remove_meal(self):
+        db_id = self.selected_dish.data(Qt.ItemDataRole.UserRole)
+        DM.removeMeal(db_id)
+        self.date_clicked(self.selected_date)
+
     def date_clicked(self, date:QDate):
+        self.selected_date = date
+        self.changeMealPlanButton.show()
         date_string = date.toString("dd-MM-yyyy")
         
         self.breakfastList.clear()
@@ -119,11 +149,12 @@ class Ui_MainWindow(object):
 
         for row in rows:
             meal_list = getattr(self, row[2].lower() + "List") 
-            meal_list.addItem(DM.idRecipe(row[3])[0][0])
-
-
-    def fill_meal(self, date: QDate):
-        date_string = date.toString("dd-MM-yyyy")
+            item = QListWidgetItem(DM.idRecipe(row[3])[0][0])
+            item.setData(Qt.ItemDataRole.UserRole, row[0])
+            meal_list.addItem(item)
+            
+    def fill_meal(self):#, date: QDate):
+        date_string = self.selected_date.toString("dd-MM-yyyy")
         date_dialog = QDialog(parent = self.centralwidget)
         date_dialog.setWindowTitle(f'{date_string} Meal Plan')
 
@@ -179,11 +210,14 @@ class Ui_MainWindow(object):
                 # Get the hidden recipe ID from the selected item
                 chosen_recipe_id = selected_recipe[0].data(Qt.ItemDataRole.UserRole)
 
-            DM.addMeal(date_string, meal_type, chosen_recipe_id)        
+                DM.addMeal(date_string, meal_type, chosen_recipe_id) 
+
+                self.date_clicked(self.selected_date)
+
+   # def refresh_meal_list(self):
+        
         #return meal_type, chosen_recipe_id, date_string
                 
-        return None, None, None
-
     def handle_selection(self, item):
         selected_key = item.data(Qt.ItemDataRole.UserRole)
         return selected_key

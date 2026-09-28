@@ -13,6 +13,14 @@ def getMealPlan():
 
     return meal_plan
 
+def removeMeal(db_id):
+    connection = sqlite3.connect("Database/RecipeBook.db")
+    cursor = connection.cursor()
+    
+    cursor.execute("DELETE FROM MealPlan WHERE id=?", [db_id])
+    connection.commit()
+    connection.close()
+
 def todaysMeals(date):
     connection = sqlite3.connect("Database/RecipeBook.db")
     cursor = connection.cursor()
