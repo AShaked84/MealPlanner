@@ -36,6 +36,59 @@ class Ui_MainWindow(object):
         self.calendarWidget = QtWidgets.QCalendarWidget(parent=self.centralwidget)
         self.calendarWidget.setGeometry(QtCore.QRect(130, 160, 200, 144))
         self.calendarWidget.setObjectName("calendarWidget")
+
+        self.menuWidget = QtWidgets.QWidget(parent = self.centralwidget)
+        self.menuWidget.setGeometry(QtCore.QRect(370, 160, 300, 271))
+        self.menuWidget.setObjectName("MenuWidget")
+
+        self.menuLayout = QtWidgets.QVBoxLayout(self.menuWidget)
+        self.menuLayout.setObjectName("MenuLayOut")
+
+        self.breakfastLayout = QtWidgets.QVBoxLayout()
+        self.breakfastLayout.setObjectName("BreakfastLayout")
+        self.breakfastLabel = QtWidgets.QLabel(parent = self.menuWidget)
+        self.breakfastLabel.setObjectName("Breakfast")
+        self.breakfastLabel.setText("Breakfast")
+        self.breakfastList = QtWidgets.QListWidget(parent = self.menuWidget)
+        self.breakfastList.setObjectName("BreakfastList")
+        self.breakfastLayout.addWidget(self.breakfastLabel)
+        self.breakfastLayout.addWidget(self.breakfastList)
+
+        self.lunchLayout = QtWidgets.QVBoxLayout()
+        self.lunchLayout.setObjectName("LunchLayout")
+        self.lunchLabel = QtWidgets.QLabel(parent = self.menuWidget)
+        self.lunchLabel.setObjectName("Lunch")
+        self.lunchLabel.setText("Lunch")
+        self.lunchList = QtWidgets.QListWidget(parent = self.menuWidget)
+        self.lunchList.setObjectName("LunchList")
+        self.lunchLayout.addWidget(self.lunchLabel)
+        self.lunchLayout.addWidget(self.lunchList)
+
+        self.dinnerLayout = QtWidgets.QVBoxLayout()
+        self.dinnerLayout.setObjectName("DinnerLayout")
+        self.dinnerLabel = QtWidgets.QLabel(parent = self.menuWidget)
+        self.dinnerLabel.setObjectName("Dinner")
+        self.dinnerLabel.setText("Dinner")
+        self.dinnerList = QtWidgets.QListWidget(parent = self.menuWidget)
+        self.dinnerList.setObjectName("DinnerList")
+        self.dinnerLayout.addWidget(self.dinnerLabel)
+        self.dinnerLayout.addWidget(self.dinnerList)
+
+        self.snacksLayout = QtWidgets.QVBoxLayout()
+        self.snacksLayout.setObjectName("SnackLayout")
+        self.snacksLabel = QtWidgets.QLabel(parent = self.menuWidget)
+        self.snacksLabel.setObjectName("Snacks")
+        self.snacksLabel.setText("Snacks")
+        self.snacksList = QtWidgets.QListWidget(parent = self.menuWidget)
+        self.snacksList.setObjectName("SnacksList")
+        self.snacksLayout.addWidget(self.snacksLabel)
+        self.snacksLayout.addWidget(self.snacksList)
+
+        self.menuLayout.addLayout(self.breakfastLayout)
+        self.menuLayout.addLayout(self.lunchLayout)
+        self.menuLayout.addLayout(self.dinnerLayout)
+        self.menuLayout.addLayout(self.snacksLayout)
+        
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(parent=MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 18))
@@ -54,7 +107,22 @@ class Ui_MainWindow(object):
 
         self.calendarWidget.clicked.connect(self.date_clicked)
 
-    def date_clicked(self, date: QDate):
+    def date_clicked(self, date:QDate):
+        date_string = date.toString("dd-MM-yyyy")
+        
+        self.breakfastList.clear()
+        self.lunchList.clear()
+        self.dinnerList.clear()
+        self.snacksList.clear()
+            
+        rows = DM.todaysMeals(date_string)
+
+        for row in rows:
+            meal_list = getattr(self, row[2].lower() + "List") 
+            meal_list.addItem(DM.idRecipe(row[3])[0][0])
+
+
+    def fill_meal(self, date: QDate):
         date_string = date.toString("dd-MM-yyyy")
         date_dialog = QDialog(parent = self.centralwidget)
         date_dialog.setWindowTitle(f'{date_string} Meal Plan')
