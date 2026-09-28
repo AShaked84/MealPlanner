@@ -1,7 +1,7 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtWidgets import QMessageBox, QLineEdit, QListWidget, QInputDialog, QFormLayout, QDialog, QPushButton, QHBoxLayout, QVBoxLayout, QTextEdit
+from PyQt6.QtWidgets import QMessageBox, QLineEdit, QListWidget, QInputDialog, QFormLayout, QDialog, QPushButton, QHBoxLayout, QVBoxLayout, QTextEdit, QListWidgetItem
 from PyQt6.QtGui import QIntValidator
-from PyQt6.QtCore import QDate
+from PyQt6.QtCore import QDate, Qt
 import json
 
 import DatabaseManager as DM
@@ -71,7 +71,14 @@ class Ui_MainWindow(object):
         meal_list.addItems(meal_type_list)
 
         recipe_list = QListWidget()
-        recipe_list.addItems(DM.listRecipes())
+        recipe_list_dictionary = DM.listRecipes()
+
+        for db_id, title in recipe_list_dictionary.items():
+            item = QListWidgetItem(str(title))
+            item.setData(Qt.ItemDataRole.UserRole, db_id)
+            recipe_list.addItem(item)
+        #recipe_list.addItems(DM.listRecipes())
+        #self.populate_list(recipe_list)
         recipe_list.hide()
         recipe_list_layout.addWidget(recipe_list)
 
@@ -89,11 +96,37 @@ class Ui_MainWindow(object):
         date_dialog.setLayout(window_layout)
 
         meal_list.itemClicked.connect(lambda item: recipe_list.show())
+        recipe_list.itemClicked.connect(self.handle_selection)
 
-        save_button.clicked.connect(lambda: DM.)
+        save_button.clicked.connect(date_dialog.accept)
         cancel_button.clicked.connect(date_dialog.reject)
         
-        date_dialog.exec()
+        result = date_dialog.exec()
+
+        if result == QDialog.DialogCode.Accepted:
+            selected_meal = meal_list.selectedItems()
+            selected_recipe = recipe_list.selectedItems()
+            if selected_meal and selected_recipe:
+                meal_type = selected_meal[0].text()
+                # Get the hidden recipe ID from the selected item
+                chosen_recipe_id = selected_recipe[0].data(Qt.ItemDataRole.UserRole)
+
+            DM.addMeal(date_string, meal_type, chosen_recipe_id)        
+        #return meal_type, chosen_recipe_id, date_string
+                
+        return None, None, None
+
+    def handle_selection(self, item):
+        selected_key = item.data(Qt.ItemDataRole.UserRole)
+        return selected_key
+
+    """def populate_list(self, list_name):
+        self.dm_instance = DM()
+        rows = self.dm_instance.loadRecipes()
+        for ID, RecipeName in rows:
+            item = QListWidgetItem(RecipeName)
+            item.setData(Qt.ItemDataRole, ID)
+            list_name.addItem(item)"""
 
     def initialize_app(self):
         self.meal_plan = DM.getMealPlan()

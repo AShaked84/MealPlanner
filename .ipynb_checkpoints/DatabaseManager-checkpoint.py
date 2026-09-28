@@ -13,6 +13,16 @@ def getMealPlan():
 
     return meal_plan
 
+#add new meal to plan
+def addMeal(date, meal, recipe_id):
+    connection = sqlite3.connect("Database/RecipeBook.db")
+    cursor = connection.cursor()
+
+    data = [date, meal, recipe_id]
+
+    cursor.execute("INSERT INTO 'MealPlan' ('date', 'meal', 'recipe_id') VALUES (?,?,?)", data)
+    connection.commit()
+    connection.close()
 #function will recieve either a link to a recipe or a string with the recipe information [recipe title, servings, ingredients] and add the recipe to the database
 def addRecipe(recipe: str | list[str]):
     connection = sqlite3.connect("Database/RecipeBook.db")
@@ -34,16 +44,25 @@ def addRecipe(recipe: str | list[str]):
     cursor.execute("INSERT INTO 'Recipes' ('RecipeName', 'Servings', 'Ingredients', 'URL') VALUES (?,?,?,?)", data)
     connection.commit()
 
+def loadRecipes(self):
+    connection = sqlite3.connect("Database/RecipeBook.db")
+    cursor = connection.cursor()
 
+    cursor.execute("SELECT ID, RecipeName FROM Recipes")
+    rows = cursor.fetchall()
+
+    return rows
 
 def listRecipes():
     connection = sqlite3.connect("Database/RecipeBook.db")
     cursor = connection.cursor()
     result = cursor.execute("SELECT * FROM Recipes")
     recipes = result.fetchall()
-    recipe_list = []
+    recipe_list = {}
 
     for recipe in recipes:
         #print(str(recipe[0]) + " - ", recipe[1])
-        recipe_list.append(str(recipe[0]) + " - " + recipe[1])
+        recipe_list[recipe[0]] = recipe[1]
+
+    connection.close()
     return recipe_list
