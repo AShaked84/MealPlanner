@@ -1,12 +1,25 @@
 import sqlite3
 import json
 import pandas as pd
+from pathlib import Path
 
 import IngredientLister as IL
 
+BASE_DIR = Path(__file__).resolve().parent
+db_path = BASE_DIR / "Database" / "RecipeBook.db"
+#pulls up the list of recipes for the days betweeen the two in the list "dates"
+def daysAhead(dates):
+    connection = sqlite3.connect(str(db_path))
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT date, recipe_id FROM MealPlan WHERE date BETWEEN ? AND ?", dates)
+    rows = cursor.fetchall()
+    connection.close()
+    return rows
+
 #get the meal plan table to initialize the app and turn it into a pandas database
 def getMealPlan():
-    connection = sqlite3.connect("Database/RecipeBook.db")
+    connection = sqlite3.connect(str(db_path))
     cursor = connection.cursor()
     
     meal_plan = pd.read_sql_query("SELECT * FROM MealPlan", connection)
@@ -14,7 +27,7 @@ def getMealPlan():
     return meal_plan
 
 def removeMeal(db_id):
-    connection = sqlite3.connect("Database/RecipeBook.db")
+    connection = sqlite3.connect(str(db_path))
     cursor = connection.cursor()
     
     cursor.execute("DELETE FROM MealPlan WHERE id=?", [db_id])
@@ -22,7 +35,7 @@ def removeMeal(db_id):
     connection.close()
 
 def todaysMeals(date):
-    connection = sqlite3.connect("Database/RecipeBook.db")
+    connection = sqlite3.connect(str(db_path))
     cursor = connection.cursor()
 
     cursor.execute("SELECT * FROM MealPlan WHERE date = ?", [date])
@@ -31,19 +44,42 @@ def todaysMeals(date):
     connection.close()
     return rows
 
+
 def idRecipe(db_id):
-    connection = sqlite3.connect("Database/RecipeBook.db")
+    connection = sqlite3.connect(str(db_path))
     cursor = connection.cursor()
 
     cursor.execute("SELECT RecipeName FROM Recipes WHERE ID = ?", [db_id])
 
     recipeTitle = cursor.fetchall()
     connection.close()
-    return recipeTitle
+    return recipeTitle[0][0]
+
+def recipeIngredients(db_id):
+    connection = sqlite3.connect(str(db_path))
+    cursor = connection.cursor()
     
+    cursor.execute("SELECT Ingredients FROM Recipes WHERE ID = ?", [db_id])
+    
+    ingredients = cursor.fetchone()
+    connection.close()
+    return ingredients# json.loads(ingredients)
+
+def recipeServings(db_id):
+    connection = sqlite3.connect(str(db_path))
+    cursor = connection.cursor()
+    
+    cursor.execute("SELECT Servings FROM Recipes WHERE ID = ?", [db_id])
+    
+    servings = cursor.fetchone()
+    connection.close()
+    return servings
+
+print(recipeServings(2)[0])
+
 #add new meal to plan
 def addMeal(date, meal, recipe_id):
-    connection = sqlite3.connect("Database/RecipeBook.db")
+    connection = sqlite3.connect(str(db_path))
     cursor = connection.cursor()
 
     data = [date, meal, recipe_id]
@@ -54,7 +90,7 @@ def addMeal(date, meal, recipe_id):
     
 #function will recieve either a link to a recipe or a string with the recipe information [recipe title, servings, ingredients] and add the recipe to the database
 def addRecipe(recipe: str | list[str]):
-    connection = sqlite3.connect("Database/RecipeBook.db")
+    connection = sqlite3.connect(str(db_path))
     cursor = connection.cursor()
 
     if isinstance(recipe, str):
@@ -84,14 +120,14 @@ def loadRecipes(self):
     return rows"""
 
 def listRecipes():
-    connection = sqlite3.connect("Database/RecipeBook.db")
+    connection = sqlite3.connect(str(db_path))
     cursor = connection.cursor()
     result = cursor.execute("SELECT * FROM Recipes")
     recipes = result.fetchall()
     recipe_list = {}
 
     for recipe in recipes:
-        #print(str(recipe[0]) + " - ", recipe[1])
+        #return dictionary {db_id:title}
         recipe_list[recipe[0]] = recipe[1]
 
     connection.close()

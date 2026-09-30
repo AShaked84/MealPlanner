@@ -28,6 +28,7 @@ def listCleaner(ingredients):
     for item in ingredients:
         item = item.strip()
         item = item.split(" ($")[0]
+        item = item.split(" $")[0]
         item = item.replace("*", "")
         item = re.sub(r"\([^)]*\)", "", item)
         words = item.split()
@@ -38,24 +39,39 @@ def listCleaner(ingredients):
         for i, word in enumerate(words):
             if is_number_or_fraction(word):
                 amount = float(Fraction(word))
-            elif word.rstrip(".") in ureg:
-                unit = word.rstrip(".")
             else:
-                ingredient = " ".join(words[i:])
-                break
+                clean_word = word.rstrip(".")
+                try:
+                    ureg(clean_word)
+                    unit = clean_word
+                except Exception:
+                    ingredient = " ".join(words[i:])
+                    break
 
-        ingredientDict[ingredient] = amount * getattr(ureg, unit)
+        
+        if ingredient in ingredientDict:
+            ingredientDict[ingredient] += amount * getattr(ureg, unit)
 
     return ingredientDict
 
 #function recieves a list of ingredients (string), the number of servings the recipe yields as written, and the number of servings the user wants in practice. The list is ran through the listCleaner function to create a dictionary(see above), and the amounts are adjusted to suit user needs.
 def groceryList(ingredients, default_servings, required_servings):
     ingredient_dict = listCleaner(ingredients)
-    serving_factor = required_servings/default_servings
+    grocery_list = {}
 
-    scaled_ingredients = {key: value * serving_factor for key, value in ingredient_dict.items()}
+    for ingredient, amount in ingredient_dict:
+        if ingredient in grocery_list:
+            grocery_list[ingredient] = grocery_list[ingredient] + amount
+        else:
+            grocery_list[ingredient] = amount
 
-    return scaled_ingredients
+    return grocery_list
+"""
+    #scaled_ingredients = {key: value * serving_factor for key, value in ingredient_dict.items()}
+    scaled_ingredients = {}
+
+    for day, meals in ingredient_dict
+    return scaled_ingredients"""
 
 #function recieves a list of cleaned dictionaries (after listCleaner) and returns a master dictionary of all the ingredients added up. 
 #need a solution for similarly worded ingredients (ie lemon vs. fresh lemon) and items "to taste" (ie salt and pepper)

@@ -115,7 +115,7 @@ class Ui_MainWindow(object):
 
         self.AddURLRecipeButton.clicked.connect(self.add_recipe_URL_lineEdit)
         self.AddMyRecipeButton.clicked.connect(self.add_my_recipe_form)
-        #self.SeeRecipesButton.clicked.connect(self.add_recipe_list)
+        self.SeeRecipesButton.clicked.connect(self.show_recipe_list)
         self.changeMealPlanButton.clicked.connect(self.fill_meal)
         self.removeDishButton.clicked.connect(self.remove_meal)
 
@@ -126,6 +126,19 @@ class Ui_MainWindow(object):
         self.dinnerList.itemClicked.connect(lambda item: print(item.data(Qt.ItemDataRole.UserRole)))
         self.snacksList.itemClicked.connect(lambda item: print(item.data(Qt.ItemDataRole.UserRole)))
 
+    #opens a dialog of a list of the recipes available, tagged with their Recipe table id
+    def show_recipe_list(self):
+        recipe_list_dialog = QDialog(parent = self.centralwidget)
+        recipe_list_dialog.setWindowTitle('Recipe Book')
+
+        window_layout = QVBoxLayout(recipe_list_dialog)
+        recipe_list = QListWidget()
+        window_layout.addWidget(recipe_list)
+
+        self.populate_recipe_list(recipe_list)
+
+        recipe_list_dialog.exec()
+
     def recipe_selected(self, item):
         self.removeDishButton.show()
         self.selected_dish = item
@@ -135,23 +148,28 @@ class Ui_MainWindow(object):
         DM.removeMeal(db_id)
         self.date_clicked(self.selected_date)
 
-    def date_clicked(self, date:QDate):
-        self.selected_date = date
-        self.changeMealPlanButton.show()
-        date_string = date.toString("dd-MM-yyyy")
-        
+    def refresh_menus(self, date_string):
         self.breakfastList.clear()
         self.lunchList.clear()
         self.dinnerList.clear()
         self.snacksList.clear()
-            
-        rows = DM.todaysMeals(date_string)
 
+        rows = DM.todaysMeals(date_string)
+        
         for row in rows:
             meal_list = getattr(self, row[2].lower() + "List") 
-            item = QListWidgetItem(DM.idRecipe(row[3])[0][0])
+            item = QListWidgetItem(DM.idRecipe(row[3]))
             item.setData(Qt.ItemDataRole.UserRole, row[0])
             meal_list.addItem(item)
+
+
+    def date_clicked(self, date:QDate):
+        self.selected_date = date
+        self.changeMealPlanButton.show()
+        date_string = date.toString("dd-MM-yyyy")
+
+        self.refresh_menus(date_string)
+        
             
     def fill_meal(self):#, date: QDate):
         date_string = self.selected_date.toString("dd-MM-yyyy")
@@ -170,12 +188,9 @@ class Ui_MainWindow(object):
         meal_list.addItems(meal_type_list)
 
         recipe_list = QListWidget()
-        recipe_list_dictionary = DM.listRecipes()
 
-        for db_id, title in recipe_list_dictionary.items():
-            item = QListWidgetItem(str(title))
-            item.setData(Qt.ItemDataRole.UserRole, db_id)
-            recipe_list.addItem(item)
+        self.populate_recipe_list(recipe_list)
+
         #recipe_list.addItems(DM.listRecipes())
         #self.populate_list(recipe_list)
         recipe_list.hide()
@@ -217,6 +232,14 @@ class Ui_MainWindow(object):
    # def refresh_meal_list(self):
         
         #return meal_type, chosen_recipe_id, date_string
+
+    def populate_recipe_list(self, recipe_list):
+        recipe_list_dictionary = DM.listRecipes()
+        
+        for db_id, title in recipe_list_dictionary.items():
+            item = QListWidgetItem(str(title))
+            item.setData(Qt.ItemDataRole.UserRole, db_id)
+            recipe_list.addItem(item)
                 
     def handle_selection(self, item):
         selected_key = item.data(Qt.ItemDataRole.UserRole)
