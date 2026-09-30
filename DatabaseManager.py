@@ -3,7 +3,7 @@ import json
 import pandas as pd
 from pathlib import Path
 
-import IngredientLister as IL
+import IngredientManager as IM
 
 BASE_DIR = Path(__file__).resolve().parent
 db_path = BASE_DIR / "Database" / "RecipeBook.db"
@@ -75,7 +75,7 @@ def recipeServings(db_id):
     connection.close()
     return servings
 
-print(recipeServings(2)[0])
+#print(recipeServings(2)[0])
 
 #add new meal to plan
 def addMeal(date, meal, recipe_id):
@@ -94,7 +94,7 @@ def addRecipe(recipe: str | list[str]):
     cursor = connection.cursor()
 
     if isinstance(recipe, str):
-        json_data = IL.recipe_scraper(recipe)
+        json_data = IM.recipe_scraper(recipe)
         name = json_data['title']
         servings = int(json_data['yields'][0])
         #at some point I should turn this into another database, probably. Keeping it simple for the time being for a proof of concept.

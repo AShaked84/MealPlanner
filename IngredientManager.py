@@ -3,8 +3,17 @@ import pint
 import re
 import json
 ureg = pint.UnitRegistry()
+from recipe_scrapers import scrape_me
 
 import DatabaseManager as DM
+
+#scrape recipe from card. Function recieves a url string and returns a json file 
+def recipe_scraper(url):
+    scraper = scrape_me(url)
+    scraper.title()
+    scraper.instructions()
+    json_data = scraper.to_json()
+    return json_data
 
 def is_number_or_fraction(word):
     try:
@@ -52,8 +61,8 @@ def list_cleaner(ingredients, recipe_scalar):
 
     return ingredient_list
 
-ing1 = json.loads(DM.recipeIngredients(5)[0])
-ing2 = json.loads(DM.recipeIngredients(6)[0])
+#ing1 = json.loads(DM.recipeIngredients(5)[0])
+#ing2 = json.loads(DM.recipeIngredients(6)[0])
 
 """
 #recieves a list of strings and a float scalar
@@ -86,4 +95,3 @@ def grocery_lister(meal_counts):
                 grocery_list[ingredient[0]] = ingredient[1]
 
     return grocery_list
-

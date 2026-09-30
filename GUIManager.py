@@ -1,11 +1,12 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtWidgets import QMessageBox, QLineEdit, QListWidget, QInputDialog, QFormLayout, QDialog, QPushButton, QHBoxLayout, QVBoxLayout, QTextEdit, QListWidgetItem
-from PyQt6.QtGui import QIntValidator
+from PyQt6.QtWidgets import QMessageBox, QLineEdit, QListWidget, QInputDialog, QFormLayout, QDialog, QPushButton, QHBoxLayout, QVBoxLayout, QTextEdit, QListWidgetItem, QLabel
+from PyQt6.QtGui import QIntValidator, QTextCharFormat
 from PyQt6.QtCore import QDate, Qt
 import json
 
 import DatabaseManager as DM
-import IngredientLister as IL
+import IngredientManager as IM
+import MealManager as MM
 
 
 class Ui_MainWindow(object):
@@ -116,6 +117,7 @@ class Ui_MainWindow(object):
         self.AddURLRecipeButton.clicked.connect(self.add_recipe_URL_lineEdit)
         self.AddMyRecipeButton.clicked.connect(self.add_my_recipe_form)
         self.SeeRecipesButton.clicked.connect(self.show_recipe_list)
+        self.ShoppingListButton.clicked.connect(self.show_shopping_list)
         self.changeMealPlanButton.clicked.connect(self.fill_meal)
         self.removeDishButton.clicked.connect(self.remove_meal)
 
@@ -127,6 +129,68 @@ class Ui_MainWindow(object):
         self.snacksList.itemClicked.connect(lambda item: print(item.data(Qt.ItemDataRole.UserRole)))
 
     #opens a dialog of a list of the recipes available, tagged with their Recipe table id
+    def show_shopping_list(self):
+        shopping_list_dialog = QDialog(parent = self.centralwidget)
+        shopping_list_dialog.setWindowTitle('Shopping List')
+
+        start_date = None
+        end_date = None
+        dates = [start_date, end_date, True]
+
+        window_layout = QVBoxLayout(shopping_list_dialog)
+        shopping_list = QListWidget()
+        label_layout = QHBoxLayout()
+        date_chooser_calendar = QtWidgets.QCalendarWidget(parent=shopping_list_dialog)
+        start_label = QLabel("Start: ")
+        end_label = QLabel("End: ")
+        date_chooser_calendar.clicked.connect(lambda date: self.date_chooser(date, dates, start_label, end_label))
+
+        label_layout.addWidget(start_label)
+        label_layout.addWidget(end_label)
+
+        window_layout.addWidget(date_chooser_calendar)
+        window_layout.addLayout(label_layout)
+
+        generate_button = QPushButton("Generate Grocery List")
+        window_layout.addWidget(generate_button)
+        window_layout.addWidget(shopping_list)
+
+        def generate_list():
+            if dates[0] is None or dates[1] is None:
+                start_label.setText("Please select both dates first")
+                return
+            shopping_list.clear()
+
+            dates_list = [date.toString("yyyy-MM-dd") for date in dates[:-1]]
+            meal_counts = MM.mealCounter(dates_list)
+            grocery_list = IM.grocery_lister(meal_counts)
+            print(grocery_list)
+
+            for ingredient, amount in grocery_list.items():
+                shopping_list.addItem(f"{amount.magnitude} {amount.units} {ingredient}")
+
+        generate_button.clicked.connect(generate_list)
+
+        shopping_list_dialog.exec()
+
+    def date_chooser(self, date:QDate, dates, start_label, end_label):
+        if dates[2]:
+            dates[0] = date
+            dates[2] = False
+
+        else:
+            dates[1] = date
+            dates[2] = True
+
+        if dates[0] is not None and dates[1] is not None:
+            if dates[1] < dates[0]:
+                dates[0], dates[1] = dates[1], dates[0]
+            
+        if dates[0] is not None:
+            start_label.setText(f"Start: {dates[0].toString('yyyy-MM-dd')}")
+        if dates[1] is not None:
+            end_label.setText(f"End: {dates[1].toString('yyyy-MM-dd')}")
+            
     def show_recipe_list(self):
         recipe_list_dialog = QDialog(parent = self.centralwidget)
         recipe_list_dialog.setWindowTitle('Recipe Book')
@@ -166,13 +230,13 @@ class Ui_MainWindow(object):
     def date_clicked(self, date:QDate):
         self.selected_date = date
         self.changeMealPlanButton.show()
-        date_string = date.toString("dd-MM-yyyy")
+        date_string = date.toString("yyyy-MM-dd")
 
         self.refresh_menus(date_string)
         
             
     def fill_meal(self):#, date: QDate):
-        date_string = self.selected_date.toString("dd-MM-yyyy")
+        date_string = self.selected_date.toString("yyyy-MM-dd")
         date_dialog = QDialog(parent = self.centralwidget)
         date_dialog.setWindowTitle(f'{date_string} Meal Plan')
 

@@ -6,6 +6,8 @@ from fractions import Fraction
 import pint
 import re
 ureg = pint.UnitRegistry()
+from datetime import date
+import datetime
 
 #once our meal plan is done we can count the instances of each meal, this way we know how many servings to prepare of each recipe.
 #this function recieves the meal plan for the chosen dates ahead, then iterates through it to count instances of each recipe. 
@@ -20,6 +22,13 @@ def mealCounter(dates):
         else:
             meal_counts[row[1]] = 1
     return meal_counts
+
+today = date.today()
+pls_wk = today + datetime.timedelta(weeks = 1)
+form_date = today.strftime("%Y-%m-%d")
+nxt_wk = pls_wk.strftime("%Y-%m-%d")
+meal_count = mealCounter([form_date, nxt_wk])
+print(meal_count)
 """
 #function recieves a dictionary of {db_id:amount of servings} and returns a dictionary of {amount:ingredient}
 def shoppingList(meal_counts):
@@ -36,5 +45,3 @@ def shoppingList(meal_counts):
     
    # return shopping_list
 """
-meal_counter = mealCounter(["27-09-2026", "30-09-2026"])
-print(IM.grocery_lister(meal_counter))
