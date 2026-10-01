@@ -23,12 +23,6 @@ def mealCounter(dates):
             meal_counts[row[1]] = 1
     return meal_counts
 
-today = date.today()
-pls_wk = today + datetime.timedelta(weeks = 1)
-form_date = today.strftime("%Y-%m-%d")
-nxt_wk = pls_wk.strftime("%Y-%m-%d")
-meal_count = mealCounter([form_date, nxt_wk])
-print(meal_count)
 """
 #function recieves a dictionary of {db_id:amount of servings} and returns a dictionary of {amount:ingredient}
 def shoppingList(meal_counts):

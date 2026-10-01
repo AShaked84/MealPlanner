@@ -1,8 +1,9 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtWidgets import QMessageBox, QLineEdit, QListWidget, QInputDialog, QFormLayout, QDialog, QPushButton, QHBoxLayout, QVBoxLayout, QTextEdit, QListWidgetItem, QLabel
 from PyQt6.QtGui import QIntValidator, QTextCharFormat
-from PyQt6.QtCore import QDate, Qt
+from PyQt6.QtCore import QDate, Qt, QPoint
 import json
+from qt_material import apply_stylesheet, list_themes
 
 import DatabaseManager as DM
 import IngredientManager as IM
@@ -15,9 +16,10 @@ class Ui_MainWindow(object):
         MainWindow.resize(800, 600)
         self.MainWindow = MainWindow
         self.centralwidget = QtWidgets.QWidget(parent=MainWindow)
+
         self.centralwidget.setObjectName("centralwidget")
         self.horizontalLayoutWidget = QtWidgets.QWidget(parent=self.centralwidget)
-        self.horizontalLayoutWidget.setGeometry(QtCore.QRect(29, 40, 421, 80))
+        self.horizontalLayoutWidget.setGeometry(QtCore.QRect(29, 40, 600, 80))
         self.horizontalLayoutWidget.setObjectName("horizontalLayoutWidget")
         self.horizontalLayout = QtWidgets.QHBoxLayout(self.horizontalLayoutWidget)
         self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
@@ -35,11 +37,11 @@ class Ui_MainWindow(object):
         self.ShoppingListButton.setObjectName("ShoppingListButton")
         self.horizontalLayout.addWidget(self.ShoppingListButton)
         self.calendarWidget = QtWidgets.QCalendarWidget(parent=self.centralwidget)
-        self.calendarWidget.setGeometry(QtCore.QRect(130, 160, 200, 144))
+        self.calendarWidget.setGeometry(QtCore.QRect(50, 160, 300, 220))
         self.calendarWidget.setObjectName("calendarWidget")
 
         self.menuWidget = QtWidgets.QWidget(parent = self.centralwidget)
-        self.menuWidget.setGeometry(QtCore.QRect(370, 160, 300, 271))
+        self.menuWidget.setGeometry(QtCore.QRect(370, 100, 300, 450))
         self.menuWidget.setObjectName("MenuWidget")
 
         self.menuLayout = QtWidgets.QVBoxLayout(self.menuWidget)
@@ -101,11 +103,42 @@ class Ui_MainWindow(object):
         self.menuLayout.addWidget(self.removeDishButton)
         self.changeMealPlanButton.hide()
         self.removeDishButton.hide()
-        
         MainWindow.setCentralWidget(self.centralwidget)
+        
         self.menubar = QtWidgets.QMenuBar(parent=MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 18))
         self.menubar.setObjectName("menubar")
+        
+        self.menuSettings = QtWidgets.QMenu(parent=self.menubar)
+        self.menuSettings.setObjectName("menuSettings")
+        
+        self.menuColorScheme = QtWidgets.QMenu(parent=self.menuSettings)
+        self.menuColorScheme.setObjectName("menuColorScheme")
+
+        self.themeGroup = QtGui.QActionGroup(self.menuColorScheme)
+        self.themeGroup.setExclusive(True)
+        themes = [
+                    "Amber", "Blue", "Cyan", "Light Green", "Pink", "Purple",
+                    "Red", "Teal", "Yellow"]
+        
+        self.menuSettings.addAction(self.menuColorScheme.menuAction())
+        self.menubar.addAction(self.menuSettings.menuAction())
+
+        self.darkModeAction = QtGui.QAction("Dark Mode", self.menuSettings)
+        self.darkModeAction.setCheckable(True)
+
+        self.menuSettings.addAction(self.darkModeAction)
+        self.darkModeAction.toggled.connect(self.toggle_dark_mode)
+
+        self.dark_mode = "False"
+        self.current_theme = "amber"
+        for theme in themes:
+            action = QtGui.QAction(theme, parent=self.menuColorScheme)
+            action.setCheckable(True)
+            self.themeGroup.addAction(action)
+            self.menuColorScheme.addAction(action)
+            action.triggered.connect(lambda checked, theme=theme: self.change_theme(theme))
+
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(parent=MainWindow)
         self.statusbar.setObjectName("statusbar")
@@ -124,11 +157,27 @@ class Ui_MainWindow(object):
         self.calendarWidget.clicked.connect(self.date_clicked)
 
         self.breakfastList.itemClicked.connect(self.recipe_selected)
-        self.lunchList.itemClicked.connect(lambda item: print(item.data(Qt.ItemDataRole.UserRole)))
-        self.dinnerList.itemClicked.connect(lambda item: print(item.data(Qt.ItemDataRole.UserRole)))
-        self.snacksList.itemClicked.connect(lambda item: print(item.data(Qt.ItemDataRole.UserRole)))
+        self.lunchList.itemClicked.connect(self.recipe_selected)
+        self.dinnerList.itemClicked.connect(self.recipe_selected)
+        self.snacksList.itemClicked.connect(self.recipe_selected)
 
     #opens a dialog of a list of the recipes available, tagged with their Recipe table id
+   #opens a dialog that has user choose a start and end date
+    def toggle_dark_mode(self, checked):
+        self.dark_mode = checked
+        self.apply_theme()
+
+
+    def change_theme(self, theme):
+        self.current_theme = theme.lower().replace(" ", "")
+        self.apply_theme()
+
+    def apply_theme(self):
+        mode = "dark" if self.dark_mode else "light"
+        theme = f"{mode}_{self.current_theme}.xml"
+
+        apply_stylesheet(QtWidgets.QApplication.instance(), theme=theme)
+   #shopping list is then generated for the recipes to be prepared for chosen dates
     def show_shopping_list(self):
         shopping_list_dialog = QDialog(parent = self.centralwidget)
         shopping_list_dialog.setWindowTitle('Shopping List')
@@ -164,7 +213,6 @@ class Ui_MainWindow(object):
             dates_list = [date.toString("yyyy-MM-dd") for date in dates[:-1]]
             meal_counts = MM.mealCounter(dates_list)
             grocery_list = IM.grocery_lister(meal_counts)
-            print(grocery_list)
 
             for ingredient, amount in grocery_list.items():
                 shopping_list.addItem(f"{amount.magnitude} {amount.units} {ingredient}")
@@ -173,6 +221,10 @@ class Ui_MainWindow(object):
 
         shopping_list_dialog.exec()
 
+    #function that allows user to choose two dates from a calendar widget
+    #First date chosen is the start date, second is the end date
+    #if the end date chosen is before the start date, they switch
+    #labels display chosen dates
     def date_chooser(self, date:QDate, dates, start_label, end_label):
         if dates[2]:
             dates[0] = date
@@ -190,28 +242,62 @@ class Ui_MainWindow(object):
             start_label.setText(f"Start: {dates[0].toString('yyyy-MM-dd')}")
         if dates[1] is not None:
             end_label.setText(f"End: {dates[1].toString('yyyy-MM-dd')}")
-            
+
+    #function opens a dialog with a list populated with all the user's saved recipes      
     def show_recipe_list(self):
         recipe_list_dialog = QDialog(parent = self.centralwidget)
         recipe_list_dialog.setWindowTitle('Recipe Book')
 
         window_layout = QVBoxLayout(recipe_list_dialog)
         recipe_list = QListWidget()
+        remove_recipe_button = QPushButton("Remove Recipe")
         window_layout.addWidget(recipe_list)
+        window_layout.addWidget(remove_recipe_button)
+        remove_recipe_button.clicked.connect(lambda: self.remove_recipe(recipe_list))
+        remove_recipe_button.hide()
 
         self.populate_recipe_list(recipe_list)
 
+        #recipe_list.itemClicked.connect(lambda item: (setattr(self, "selected_recipe", item),
+         #                                             remove_recipe_button.show()))
+        recipe_list.itemClicked.connect(lambda item: (setattr(self, "selected_recipe", item),
+                                                      self.handle_recipe_list_click(item, remove_recipe_button)))
+
         recipe_list_dialog.exec()
 
+    #handles clicking a recipe in the show recipes button
+    def handle_recipe_list_click(self, item, remove_recipe_button):#, recipe_list):
+        remove_recipe_button.show()
+        #rect = recipe_list.visualItemRect(item)
+        #global_pos = recipe_list.mapToGlobal(QPoint(rect.right(), rect.top))
+        print(item)
+
+    #when recipe is clicked, a remove dish button is shown
+    #called for the menus
     def recipe_selected(self, item):
         self.removeDishButton.show()
         self.selected_dish = item
 
+    #when recipe is clicked, a remove recipe button is shown that allows users to delete chosen recipe from Recipes database
+    #def recipe_book_selected(self, item):
+     #   self.selected_recipe = item
+
+    #removes clicked meal from the menu and refreshes menus
+    #used on the daily menus
     def remove_meal(self):
         db_id = self.selected_dish.data(Qt.ItemDataRole.UserRole)
         DM.removeMeal(db_id)
         self.date_clicked(self.selected_date)
 
+    #removes clicked recie from the recipe list and refreshes list
+    #used on the recipe list 
+    def remove_recipe(self, recipe_list):
+        db_id = self.selected_recipe.data(Qt.ItemDataRole.UserRole)
+        DM.removeRecipe(db_id)
+        recipe_list.clear()
+        self.populate_recipe_list(recipe_list)
+
+    #refreshes the menus after update
     def refresh_menus(self, date_string):
         self.breakfastList.clear()
         self.lunchList.clear()
@@ -226,7 +312,8 @@ class Ui_MainWindow(object):
             item.setData(Qt.ItemDataRole.UserRole, row[0])
             meal_list.addItem(item)
 
-
+    #when date is clicked on recipe widget, change meal plan button appears
+    #if meal plan is changed, the menus are refreshed
     def date_clicked(self, date:QDate):
         self.selected_date = date
         self.changeMealPlanButton.show()
@@ -234,7 +321,7 @@ class Ui_MainWindow(object):
 
         self.refresh_menus(date_string)
         
-            
+    #dialog window that allows user to choose a meal to fill in and with what dish        
     def fill_meal(self):#, date: QDate):
         date_string = self.selected_date.toString("yyyy-MM-dd")
         date_dialog = QDialog(parent = self.centralwidget)
@@ -248,6 +335,7 @@ class Ui_MainWindow(object):
         recipe_list_layout = QVBoxLayout()
 
         meal_list = QListWidget()
+        #meal_list.setStyleSheet("""QListWidget::item:hover { background-color: lightblue;}""")
         meal_type_layout.addWidget(meal_list)
         meal_list.addItems(meal_type_list)
 
@@ -293,10 +381,8 @@ class Ui_MainWindow(object):
 
                 self.date_clicked(self.selected_date)
 
-   # def refresh_meal_list(self):
-        
-        #return meal_type, chosen_recipe_id, date_string
-
+   #gets all the recipes titles from the Recipes database table, tags them with their ID number
+   #fills the recipe_list list widget with the recipe titles
     def populate_recipe_list(self, recipe_list):
         recipe_list_dictionary = DM.listRecipes()
         
@@ -304,22 +390,19 @@ class Ui_MainWindow(object):
             item = QListWidgetItem(str(title))
             item.setData(Qt.ItemDataRole.UserRole, db_id)
             recipe_list.addItem(item)
-                
+
+    #returns the invisible tag for a tagged item 
+    # used when the item's tag should be saved rather than what's visible to the user
+    # called by the fill meal function
     def handle_selection(self, item):
         selected_key = item.data(Qt.ItemDataRole.UserRole)
         return selected_key
 
-    """def populate_list(self, list_name):
-        self.dm_instance = DM()
-        rows = self.dm_instance.loadRecipes()
-        for ID, RecipeName in rows:
-            item = QListWidgetItem(RecipeName)
-            item.setData(Qt.ItemDataRole, ID)
-            list_name.addItem(item)"""
-
     def initialize_app(self):
         self.meal_plan = DM.getMealPlan()
 
+#opens dialog box with a space to add a URL
+#URL is then sent to the scraper that fills in the recipe
     def add_recipe_URL_lineEdit(self):
         """self.recipe_input_field = QLineEdit(parent = self.centralwidget)
         add_new_recipe = QtWidgets.QPushButton(parent = self.centralwidget)
@@ -332,12 +415,7 @@ class Ui_MainWindow(object):
         if ok and text:
             DM.addRecipe(text)
 
-    def add_recipe_list(self):
-        recipe_list = QListWidget(parent = self.centralwidget)
-        recipe_list.addItems(DM.listRecipes())
-        recipe_list.setGeometry(350, 160, 150, 200)
-        recipe_list.show()
-
+#opens a dialog box that allows users to manually enter their own recipes
     def add_my_recipe_form(self):
         recipe_form = QDialog(parent = self.centralwidget)
         recipe_form.setWindowTitle("Add Recipe Manually")
@@ -370,7 +448,7 @@ class Ui_MainWindow(object):
         cancel_button.clicked.connect(recipe_form.close)
         #submit_button.clicked.connect(lambda: (DM.addRecipe([self.recipe_name_input.text(), self.serving_size_input.text(), json.dumps(self.ingredients_input.toPlainText().split(','))])), recipe_form.close)
         submit_button.clicked.connect(
-    lambda: (
+        lambda: (
         DM.addRecipe([
             self.recipe_name_input.text(), 
             self.serving_size_input.text(), 
@@ -381,16 +459,13 @@ class Ui_MainWindow(object):
 )
         
         recipe_form.exec()
-        
-    """def add_shopping_list(self)
-        shopping_list = QListWidget(parent = self.centralwidget)
-        shopping_dictionary = IL.
-        recipe_list.addItems(DM.listRecipes())
-        recipe_list.setGeometry(350, 160, 150, 200)
-        recipe_list.show()
-    """
+
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
+
+        self.menuSettings.setTitle(_translate("MainWindow", "Settings"))
+        self.menuColorScheme.setTitle(_translate("MainWindow", "Color Scheme"))
+
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.AddMyRecipeButton.setText(_translate("MainWindow", "Add Recipe Manually"))
         self.AddURLRecipeButton.setText(_translate("MainWindow", "Add Recipe with URL"))
@@ -401,6 +476,7 @@ class Ui_MainWindow(object):
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
+    apply_stylesheet(app, theme = 'light_amber.xml')
     MainWindow = QtWidgets.QMainWindow()
     ui = Ui_MainWindow()
     ui.setupUi(MainWindow)

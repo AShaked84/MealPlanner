@@ -14,6 +14,7 @@ def daysAhead(dates):
 
     cursor.execute("SELECT date, recipe_id FROM MealPlan WHERE date BETWEEN ? AND ?", dates)
     rows = cursor.fetchall()
+    print(rows)
     connection.close()
     return rows
 
@@ -31,6 +32,14 @@ def removeMeal(db_id):
     cursor = connection.cursor()
     
     cursor.execute("DELETE FROM MealPlan WHERE id=?", [db_id])
+    connection.commit()
+    connection.close()
+
+def removeRecipe(db_id):
+    connection = sqlite3.connect(str(db_path))
+    cursor = connection.cursor()
+    
+    cursor.execute("DELETE FROM Recipes WHERE id=?", [db_id])
     connection.commit()
     connection.close()
 
