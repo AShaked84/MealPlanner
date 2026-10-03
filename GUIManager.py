@@ -199,7 +199,6 @@ class Ui_MainWindow(object):
 
         if result == QDialog.DialogCode.Accepted:
             self.default_servings = diner_number.value()
-            print(self.default_servings)
 
    #opens a dialog that has user choose a start and end date
     def toggle_dark_mode(self, checked):

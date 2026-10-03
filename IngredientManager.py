@@ -7,6 +7,14 @@ from recipe_scrapers import scrape_me
 
 import DatabaseManager as DM
 
+unit_aliases = {
+    "tblsp": "tablespoon",
+    "tbsp": "tablespoon",
+    "Tblsp": "tablespoon",
+    "Tbsp": "tablespoon"
+}
+
+
 #scrape recipe from card. Function recieves a url string and returns a json file 
 def recipe_scraper(url):
     scraper = scrape_me(url)
@@ -37,6 +45,16 @@ def list_cleaner(ingredients, recipe_scalar):
         item = item.replace("*", "")
         item = re.sub(r"\([^)]*\)", "", item)
 
+        #unicode fractions are annoying 
+        unicode_fractions = {"½": "1/2",
+    "⅓": "1/3", "⅔": "2/3", "¼": "1/4", "¾": "3/4", "⅕": "1/5", "⅖": "2/5", "⅗": "3/5", "⅘": "4/5", "⅙": "1/6", "⅚": "5/6", "⅛": "1/8", "⅜": "3/8", "⅝": "5/8", "⅞": "7/8"}
+
+        for fraction, replacement in unicode_fractions.items():
+            item = item.replace(fraction, replacement)
+
+        item = re.sub(r'(\d+)\s+(\d+/\d+)',lambda m: str(Fraction(m.group(1)) + Fraction(m.group(2))), item)
+        item = re.sub(r'(\d)([a-zA-Z]+)', r'\1 \2', item)
+
         #divide string into words
         words = item.split()
 
@@ -49,6 +67,7 @@ def list_cleaner(ingredients, recipe_scalar):
                 amount = float(Fraction(word))
             else:
                 clean_word = word.rstrip(".")
+                clean_word = unit_aliases.get(clean_word.lower(), clean_word)
                 try:
                     ureg(clean_word)
                     unit = clean_word
