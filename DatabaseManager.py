@@ -91,7 +91,6 @@ def idRecipe(db_id):
     cursor.execute("SELECT RecipeName FROM Recipes WHERE ID = ?", [db_id])
 
     recipeTitle = cursor.fetchall()
-    connection.close()
     return recipeTitle[0][0]
 
 def recipeIngredients(db_id):
@@ -117,35 +116,52 @@ def recipeServings(db_id):
 #print(recipeServings(2)[0])
 
 #add new meal to plan
-def addMeal(date, meal, recipe_id):
+def addMeal(date, meal, recipe_id, servings):
     connection = sqlite3.connect(str(db_path))
     cursor = connection.cursor()
 
-    data = [date, meal, recipe_id]
+    data = [date, meal, recipe_id, servings]
 
-    cursor.execute("INSERT INTO 'MealPlan' ('date', 'meal', 'recipe_id') VALUES (?,?,?)", data)
+    cursor.execute("INSERT INTO 'MealPlan' ('date', 'meal', 'recipe_id', 'servings') VALUES (?,?,?, ?)", data)
     connection.commit()
     connection.close()
     
 #function will recieve either a link to a recipe or a string with the recipe information [recipe title, servings, ingredients] and add the recipe to the database
 def addRecipe(recipe: str | list[str]):
-    connection = sqlite3.connect(str(db_path))
-    cursor = connection.cursor()
 
     if isinstance(recipe, str):
         json_data = IM.recipe_scraper(recipe)
         name = json_data['title']
         servings = int(json_data['yields'][0])
         #at some point I should turn this into another database, probably. Keeping it simple for the time being for a proof of concept.
-        ingredients = json.dumps(json_data["ingredient_groups"][0]["ingredients"])
+        raw_ingredients = json_data["ingredient_groups"][0]["ingredients"]
+        ingredients = json.dumps(raw_ingredients)
         url = json_data['canonical_url']
         data = [name, servings, ingredients, url]
 
     elif isinstance(recipe, list):
         recipe.append(None)
         data = recipe
+        name = data[0]
+        servings = int(data[1])
+        raw_ingredients = json.loads(data[2])
+        ingredients = data[2]
 
+
+    ingredient_list = IM.list_cleaner(raw_ingredients, 1/servings)
+    
+    connection = sqlite3.connect(str(db_path))
+    cursor = connection.cursor()
     cursor.execute("INSERT INTO 'Recipes' ('RecipeName', 'Servings', 'Ingredients', 'URL') VALUES (?,?,?,?)", data)
+    connection.commit()
+    recipe_id = cursor.lastrowid
+
+    #ingredient_list = ingredient_list.append(cursor.lastrowid)
+    cleaned_ingredients = []
+    for ingredient, quantity in ingredient_list:
+        cleaned_ingredients.append((ingredient, quantity.magnitude, str(quantity.units), recipe_id))
+
+    cursor.executemany("INSERT INTO Ingredients (Ingredient, Amount, Unit, Recipe_ID) VALUES (?, ?, ?, ?)", cleaned_ingredients)
     connection.commit()
     connection.close()
 
@@ -172,3 +188,4 @@ def listRecipes():
 
     connection.close()
     return recipe_list
+

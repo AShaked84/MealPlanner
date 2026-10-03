@@ -181,12 +181,12 @@ import sqlite3
 import os
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-db_path = os.path.join(BASE_DIR, "RecipeBook.db")  # Replace with your actual db filename
+db_path = os.path.join(BASE_DIR, "Database/RecipeBook.db")  # Replace with your actual db filename
 
 
 conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 
-cursor.execute("ALTER TABLE MealPlan ADD COLUMN servings INT")
+cursor.execute("CREATE TABLE Ingredients ( ID INT PRIMARY KEY, Recipe_ID INT, Amount FLOAT, Unit VARCHAR(50), Ingredient VARCHAR(100), FOREIGN KEY (Recipe_ID) REFERENCES Recipes(ID))")
 conn.commit()
-conn.close
+conn.close()

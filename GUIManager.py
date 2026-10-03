@@ -427,7 +427,7 @@ class Ui_MainWindow(object):
     def change_serving(self, item, label, delta):
 
         meal_id = int(item.data(Qt.ItemDataRole.UserRole + 2))
-        servings = DM.get_servings(meal_id)[0][0]
+        servings = DM.get_servings(meal_id)[0]#[0]
 
         DM.change_servings(meal_id, delta)
 
@@ -501,7 +501,7 @@ class Ui_MainWindow(object):
                 # Get the hidden recipe ID from the selected item
                 chosen_recipe_id = selected_recipe[0].data(Qt.ItemDataRole.UserRole)
 
-                DM.addMeal(date_string, meal_type, chosen_recipe_id) 
+                DM.addMeal(date_string, meal_type, chosen_recipe_id, self.default_servings) 
 
                 self.date_clicked(self.selected_date)
 

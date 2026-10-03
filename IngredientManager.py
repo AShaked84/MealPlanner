@@ -4,6 +4,7 @@ import re
 import json
 ureg = pint.UnitRegistry()
 from recipe_scrapers import scrape_me
+from tokenize import TokenError
 
 import DatabaseManager as DM
 
@@ -13,7 +14,7 @@ unit_aliases = {
     "Tblsp": "tablespoon",
     "Tbsp": "tablespoon"
 }
-
+ureg.define("count = []")
 
 #scrape recipe from card. Function recieves a url string and returns a json file 
 def recipe_scraper(url):
@@ -61,22 +62,51 @@ def list_cleaner(ingredients, recipe_scalar):
         #default units
         unit = "count"
         amount = 1
+        ingredient = ""
 
         for i, word in enumerate(words):
+            if not word.strip():
+                continue
+
             if is_number_or_fraction(word):
                 amount = float(Fraction(word))
             else:
                 clean_word = word.rstrip(".")
                 clean_word = unit_aliases.get(clean_word.lower(), clean_word)
-                try:
+
+                is_valid_unit = False
+
+                if clean_word:
+                    try:
+                        ureg(clean_word)
+                        is_valid_unit = True
+                    except (Exception, TokenError):
+                        pass
+
+                if is_valid_unit:
+                    unit = clean_word
+                else:
+                    ingredient = " ".join(words[i:])
+                    break
+                """try:
                     ureg(clean_word)
                     unit = clean_word
 
                 except Exception:
                     ingredient = " ".join(words[i:])
-                    break
+                    break"""
 
-        ingredient_list.append([ingredient, (amount * recipe_scalar) * getattr(ureg, unit)])
+        if not ingredient and words:
+            ingredient = " ".join(words)
+
+        if unit == "count":
+            unit_obj = ureg.count
+        elif unit and hasattr(ureg, unit):
+            unit_obj = getattr(ureg, unit)
+        else:
+            unit_obj = ureg.count
+
+        ingredient_list.append([ingredient, (amount * recipe_scalar) * unit_obj])
 
     return ingredient_list
 
@@ -103,7 +133,9 @@ def grocery_lister(meal_counts):
     grocery_list = {}
     for db_id, servings in meal_counts.items():
         original_servings = DM.recipeServings(db_id)[0]
-        recipe_scalar = servings / original_servings
+        if not original_servings:
+            original_servings = 1
+        recipe_scalar = int(servings) / original_servings
         ingredients = json.loads(DM.recipeIngredients(db_id)[0])
 
         scaled_ingredients = list_cleaner(ingredients, recipe_scalar)
