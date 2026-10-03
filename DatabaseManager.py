@@ -12,11 +12,40 @@ def daysAhead(dates):
     connection = sqlite3.connect(str(db_path))
     cursor = connection.cursor()
 
-    cursor.execute("SELECT date, recipe_id FROM MealPlan WHERE date BETWEEN ? AND ?", dates)
+    cursor.execute("SELECT date, recipe_id, servings FROM MealPlan WHERE date BETWEEN ? AND ?", dates)
     rows = cursor.fetchall()
-    print(rows)
     connection.close()
     return rows
+
+"""def change_servings(meal_id, delta):
+    with sqlite3.connect(str(db_path), timeout=10) as connection:
+        cursor = connection.cursor()
+
+        cursor.execute("UPDATE MealPlan SET servings = servings + ? WHERE id = ?", [delta, meal_id])
+        connection.commit()
+        connection.close()"""
+
+def get_servings(meal_id):
+    connection = sqlite3.connect(str(db_path))
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT servings FROM MealPlan WHERE id=?", (meal_id,))
+    servings = cursor.fetchone()
+    connection.close()
+    return servings
+
+def change_servings(meal_id, delta):
+
+    try:
+        with sqlite3.connect(str(db_path), timeout=10) as connection:
+
+            connection.execute(
+                "UPDATE MealPlan SET servings = servings + ? WHERE id = ?",
+                (delta, meal_id)
+            )
+
+    except sqlite3.OperationalError as e:
+        raise
 
 #get the meal plan table to initialize the app and turn it into a pandas database
 def getMealPlan():
@@ -25,6 +54,7 @@ def getMealPlan():
     
     meal_plan = pd.read_sql_query("SELECT * FROM MealPlan", connection)
 
+    connection.close
     return meal_plan
 
 def removeMeal(db_id):
@@ -117,6 +147,7 @@ def addRecipe(recipe: str | list[str]):
 
     cursor.execute("INSERT INTO 'Recipes' ('RecipeName', 'Servings', 'Ingredients', 'URL') VALUES (?,?,?,?)", data)
     connection.commit()
+    connection.close()
 
 """
 def loadRecipes(self):

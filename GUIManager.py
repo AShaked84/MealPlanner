@@ -360,6 +360,7 @@ class Ui_MainWindow(object):
         self.snacksList.clear()
 
         rows = DM.todaysMeals(date_string)
+        #row[0] - id row[1] - date row[2] - meal type row[3] recipe_id row[4] - servings
         
         """for row in rows:
             meal_list = getattr(self, row[2].lower() + "List") 
@@ -383,7 +384,7 @@ class Ui_MainWindow(object):
             minus_button.setFixedSize(25,25)
             minus_button.setStyleSheet("padding: 0px; margin: 0px;")
 
-            serving_label = QLabel(str(self.default_servings))
+            serving_label = QLabel(str(row[4]))
             serving_label.setFixedSize(15,25)
 
             title_layout = QHBoxLayout()
@@ -401,7 +402,7 @@ class Ui_MainWindow(object):
 
             item.setData(Qt.ItemDataRole.UserRole, row[3]) #db_id
             item.setData(Qt.ItemDataRole.UserRole + 1, self.default_servings) #servings
-            print(item.data(Qt.ItemDataRole.UserRole), item.data(Qt.ItemDataRole.UserRole + 1))
+            item.setData(Qt.ItemDataRole.UserRole + 2, row[0]) #meal_id
 
             meal_list.addItem(item)
             meal_list.setItemWidget(item, item_widget)
@@ -412,6 +413,9 @@ class Ui_MainWindow(object):
 
             item.setSizeHint(hint)
 
+            plus_button.clicked.connect(lambda _, current_item = item, current_label = serving_label: self.change_serving(current_item, current_label, 1))
+            minus_button.clicked.connect(lambda _, current_item = item, current_label = serving_label: self.change_serving(current_item, current_label, -1))
+
             #meal_list.itemClicked.connect(lambda item: self.expand_item(meal_list, item))
     """
     def expand_item(self, item):
@@ -419,6 +423,20 @@ class Ui_MainWindow(object):
         details = item_widget.layout().itemAt(1).widget()
         details.setVisible(not details.isVisible())
         item.sizeHint(item_widget.setSizeHint())"""
+
+    #add a serving to a menu item
+    def change_serving(self, item, label, delta):
+
+        meal_id = int(item.data(Qt.ItemDataRole.UserRole + 2))
+        servings = DM.get_servings(meal_id)[0][0]
+
+        DM.change_servings(meal_id, delta)
+
+        servings += delta
+        item.setData(Qt.ItemDataRole.UserRole + 1, servings)
+        label.setText(str(servings))
+
+
     #when date is clicked on recipe widget, change meal plan button appears
     #if meal plan is changed, the menus are refreshed
     def date_clicked(self, date:QDate):

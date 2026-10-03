@@ -15,12 +15,13 @@ import datetime
 def mealCounter(dates):
     meal_counts = {}
     rows = DM.daysAhead(dates)
-    
+
+    #row[0] - date row[1] - recipe_id row[2] - servings
     for row in rows:
         if row[1] in meal_counts:
-            meal_counts[row[1]] += 1
+            meal_counts[row[1]] += row[2]
         else:
-            meal_counts[row[1]] = 1
+            meal_counts[row[1]] = row[2]
     return meal_counts
 
 """
