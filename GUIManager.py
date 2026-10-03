@@ -1,5 +1,5 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtWidgets import QMessageBox, QLineEdit, QListWidget, QInputDialog, QFormLayout, QDialog, QPushButton, QHBoxLayout, QVBoxLayout, QTextEdit, QListWidgetItem, QLabel
+from PyQt6.QtWidgets import QSpinBox, QLineEdit, QListWidget, QInputDialog, QFormLayout, QDialog, QPushButton, QHBoxLayout, QVBoxLayout, QTextEdit, QListWidgetItem, QLabel
 from PyQt6.QtGui import QIntValidator, QTextCharFormat
 from PyQt6.QtCore import QDate, Qt, QPoint
 import json
@@ -41,7 +41,7 @@ class Ui_MainWindow(object):
         self.calendarWidget.setObjectName("calendarWidget")
 
         self.menuWidget = QtWidgets.QWidget(parent = self.centralwidget)
-        self.menuWidget.setGeometry(QtCore.QRect(370, 100, 300, 450))
+        self.menuWidget.setGeometry(QtCore.QRect(370, 100, 400, 450))
         self.menuWidget.setObjectName("MenuWidget")
 
         self.menuLayout = QtWidgets.QVBoxLayout(self.menuWidget)
@@ -115,29 +115,30 @@ class Ui_MainWindow(object):
         self.menuColorScheme = QtWidgets.QMenu(parent=self.menuSettings)
         self.menuColorScheme.setObjectName("menuColorScheme")
 
+        self.menuDinerSettings = QtGui.QAction("Diner Settings", self.menuSettings)
+
         self.themeGroup = QtGui.QActionGroup(self.menuColorScheme)
         self.themeGroup.setExclusive(True)
         themes = [
                     "Amber", "Blue", "Cyan", "Light Green", "Pink", "Purple",
                     "Red", "Teal", "Yellow"]
-        
+
+        self.menuSettings.addAction(self.menuDinerSettings)
         self.menuSettings.addAction(self.menuColorScheme.menuAction())
         self.menubar.addAction(self.menuSettings.menuAction())
+
+        self.menuDinerSettings.triggered.connect(self.diner_settings_dialog)
 
         self.darkModeAction = QtGui.QAction("Dark Mode", self.menuSettings)
         self.darkModeAction.setCheckable(True)
 
+        self.dark_mode = False
+        self.current_theme = "amber"
+
         self.menuSettings.addAction(self.darkModeAction)
         self.darkModeAction.toggled.connect(self.toggle_dark_mode)
 
-        self.dark_mode = "False"
-        self.current_theme = "amber"
-        for theme in themes:
-            action = QtGui.QAction(theme, parent=self.menuColorScheme)
-            action.setCheckable(True)
-            self.themeGroup.addAction(action)
-            self.menuColorScheme.addAction(action)
-            action.triggered.connect(lambda checked, theme=theme: self.change_theme(theme))
+        self.connect_signals(themes)
 
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(parent=MainWindow)
@@ -147,6 +148,10 @@ class Ui_MainWindow(object):
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
+        self.centralwidget.setFocusPolicy(QtCore.Qt.FocusPolicy.StrongFocus)
+        self.centralwidget.setFocus()
+
+        self.default_servings = 2
         self.AddURLRecipeButton.clicked.connect(self.add_recipe_URL_lineEdit)
         self.AddMyRecipeButton.clicked.connect(self.add_my_recipe_form)
         self.SeeRecipesButton.clicked.connect(self.show_recipe_list)
@@ -161,13 +166,47 @@ class Ui_MainWindow(object):
         self.dinnerList.itemClicked.connect(self.recipe_selected)
         self.snacksList.itemClicked.connect(self.recipe_selected)
 
-    #opens a dialog of a list of the recipes available, tagged with their Recipe table id
+    def connect_signals(self, themes):
+        for theme in themes:
+            action = QtGui.QAction(theme, parent=self.menuColorScheme)
+            action.setCheckable(True)
+            self.themeGroup.addAction(action)
+            self.menuColorScheme.addAction(action)
+            action.triggered.connect(lambda checked, t=theme: self.change_theme(t))
+
+   #launches a dialog that defines default diner settings, to be changed as needed day to day
+    def diner_settings_dialog(self):
+        dialog = QDialog(parent=self.centralwidget)
+        dialog.setWindowTitle("Diner Settings")
+
+        settings_layout = QFormLayout(parent=dialog)
+
+        diner_number = QSpinBox()
+        diner_number.setRange(0, 99)
+        diner_number.setValue(2)
+
+        settings_layout.addRow("Default number of diners:", diner_number)
+        save_button = QPushButton("Save Settings")
+        save_button.clicked.connect(dialog.accept)
+        cancel_button = QPushButton("Cancel")
+        cancel_button.clicked.connect(dialog.reject)
+        #settings_layout.addRow(save_button)
+        settings_layout.addRow(save_button, cancel_button)
+
+        dialog.setLayout(settings_layout)
+
+        result = dialog.exec()
+
+        if result == QDialog.DialogCode.Accepted:
+            self.default_servings = diner_number.value()
+            print(self.default_servings)
+
    #opens a dialog that has user choose a start and end date
     def toggle_dark_mode(self, checked):
         self.dark_mode = checked
         self.apply_theme()
 
-
+    #changes the window theme based on user choice
     def change_theme(self, theme):
         self.current_theme = theme.lower().replace(" ", "")
         self.apply_theme()
@@ -270,13 +309,28 @@ class Ui_MainWindow(object):
         remove_recipe_button.show()
         #rect = recipe_list.visualItemRect(item)
         #global_pos = recipe_list.mapToGlobal(QPoint(rect.right(), rect.top))
-        print(item)
 
     #when recipe is clicked, a remove dish button is shown
     #called for the menus
     def recipe_selected(self, item):
+        for meal_list in [
+            self.breakfastList,
+            self.lunchList,
+            self.dinnerList,
+            self.snacksList
+        ]:
+            if meal_list is not item.listWidget():
+                meal_list.clearSelection()
+
         self.removeDishButton.show()
+
         self.selected_dish = item
+        meal_list = MainWindow.sender()
+        item_widget = meal_list.itemWidget(item)
+
+        details = item_widget.layout().itemAt(1).widget()
+        details.setVisible(not details.isVisible())
+        item.setSizeHint(item_widget.sizeHint())
 
     #when recipe is clicked, a remove recipe button is shown that allows users to delete chosen recipe from Recipes database
     #def recipe_book_selected(self, item):
@@ -297,6 +351,7 @@ class Ui_MainWindow(object):
         recipe_list.clear()
         self.populate_recipe_list(recipe_list)
 
+    #fills in the menus with the recipes saved for each meal
     #refreshes the menus after update
     def refresh_menus(self, date_string):
         self.breakfastList.clear()
@@ -306,12 +361,64 @@ class Ui_MainWindow(object):
 
         rows = DM.todaysMeals(date_string)
         
-        for row in rows:
+        """for row in rows:
             meal_list = getattr(self, row[2].lower() + "List") 
             item = QListWidgetItem(DM.idRecipe(row[3]))
             item.setData(Qt.ItemDataRole.UserRole, row[0])
-            meal_list.addItem(item)
+            meal_list.addItem(item)"""
 
+        for row in rows:
+            meal_list = getattr(self, row[2].lower() + "List") #which menu to add item to?
+            item_widget = QtWidgets.QWidget()
+            layout = QVBoxLayout(item_widget)
+
+            title = QLabel(DM.idRecipe(row[3]))
+            details = QLabel("add info here")
+
+            plus_button = QPushButton("+")
+            plus_button.setFixedSize(25,25)
+            plus_button.setStyleSheet("padding: 0px; margin: 0px;")
+            
+            minus_button = QPushButton("-")
+            minus_button.setFixedSize(25,25)
+            minus_button.setStyleSheet("padding: 0px; margin: 0px;")
+
+            serving_label = QLabel(str(self.default_servings))
+            serving_label.setFixedSize(15,25)
+
+            title_layout = QHBoxLayout()
+            title_layout.addWidget(title)
+            title_layout.addWidget(minus_button)
+            title_layout.addWidget(serving_label)
+            title_layout.addWidget(plus_button)
+
+            layout.addLayout(title_layout)
+            layout.addWidget(details)
+
+            details.hide()
+
+            item = QListWidgetItem()
+
+            item.setData(Qt.ItemDataRole.UserRole, row[3]) #db_id
+            item.setData(Qt.ItemDataRole.UserRole + 1, self.default_servings) #servings
+            print(item.data(Qt.ItemDataRole.UserRole), item.data(Qt.ItemDataRole.UserRole + 1))
+
+            meal_list.addItem(item)
+            meal_list.setItemWidget(item, item_widget)
+
+            hint = item_widget.sizeHint()
+            safe_height = max(hint.height(), 45)
+            hint.setHeight(safe_height)
+
+            item.setSizeHint(hint)
+
+            #meal_list.itemClicked.connect(lambda item: self.expand_item(meal_list, item))
+    """
+    def expand_item(self, item):
+        item_widget = self.sender()
+        details = item_widget.layout().itemAt(1).widget()
+        details.setVisible(not details.isVisible())
+        item.sizeHint(item_widget.setSizeHint())"""
     #when date is clicked on recipe widget, change meal plan button appears
     #if meal plan is changed, the menus are refreshed
     def date_clicked(self, date:QDate):

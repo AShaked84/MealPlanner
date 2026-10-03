@@ -14,7 +14,7 @@ MainWindow.show()
 
 sys.exit(app.exec())"""
 
-
+"""
 import sys
 from PyQt6.QtWidgets import QApplication, QMainWindow, QTreeWidget, QTreeWidgetItem, QLabel, QVBoxLayout, QWidget
 from PyQt6.QtGui import QPixmap
@@ -77,7 +77,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = DropDownImageWindow()
     window.show()
-    sys.exit(app.exec())
+    sys.exit(app.exec())"""
 """
 import sys
 from PyQt6.QtWidgets import (
