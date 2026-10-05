@@ -177,6 +177,7 @@ if __name__ == "__main__":
     window.show()
     sys.exit(app.exec())"""
 
+"""
 import sqlite3
 import os
 
@@ -189,4 +190,4 @@ cursor = conn.cursor()
 
 cursor.execute("CREATE TABLE Ingredients ( ID INT PRIMARY KEY, Recipe_ID INT, Amount FLOAT, Unit VARCHAR(50), Ingredient VARCHAR(100), FOREIGN KEY (Recipe_ID) REFERENCES Recipes(ID))")
 conn.commit()
-conn.close()
+conn.close()"""

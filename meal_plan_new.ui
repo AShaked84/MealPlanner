@@ -24,7 +24,7 @@
      </rect>
     </property>
    </widget>
-   <widget class="QWidget" name="">
+   <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
       <x>225</x>
@@ -33,38 +33,38 @@
       <height>19</height>
      </rect>
     </property>
-    <layout class="QHBoxLayout" name="horizontalLayout">
+    <layout class="QHBoxLayout" name="mainButtonLayout">
      <item>
-      <widget class="QPushButton" name="pushButton">
+      <widget class="QPushButton" name="manualRecipeButton">
        <property name="text">
-        <string>PushButton</string>
+        <string>Add Recipe Manually</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="pushButton_4">
+      <widget class="QPushButton" name="urlRecipeButton">
        <property name="text">
-        <string>PushButton</string>
+        <string>Add Recipe With URL</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="pushButton_3">
+      <widget class="QPushButton" name="seeRecipesButton">
        <property name="text">
-        <string>PushButton</string>
+        <string>See Saved Recipes</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="pushButton_2">
+      <widget class="QPushButton" name="groceryListButton">
        <property name="text">
-        <string>PushButton</string>
+        <string>Shopping List</string>
        </property>
       </widget>
      </item>
     </layout>
    </widget>
-   <widget class="QWidget" name="">
+   <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
       <x>41</x>
@@ -73,62 +73,62 @@
       <height>434</height>
      </rect>
     </property>
-    <layout class="QHBoxLayout" name="horizontalLayout_2">
+    <layout class="QHBoxLayout" name="planningLayout">
      <item>
-      <layout class="QGridLayout" name="gridLayout">
+      <layout class="QGridLayout" name="menuLayout">
        <item row="0" column="0">
-        <widget class="QLabel" name="label">
+        <widget class="QLabel" name="breakfastLabel">
          <property name="text">
-          <string>TextLabel</string>
+          <string>Breakfast</string>
          </property>
         </widget>
        </item>
        <item row="0" column="1">
-        <widget class="QLabel" name="label_3">
+        <widget class="QLabel" name="lunchLabel">
          <property name="text">
-          <string>TextLabel</string>
+          <string>Lunch</string>
          </property>
         </widget>
        </item>
-       <item row="1" column="0">
-        <widget class="QListWidget" name="listWidget"/>
-       </item>
        <item row="1" column="1">
-        <widget class="QListWidget" name="listWidget_3"/>
+        <widget class="QListWidget" name="lunchList"/>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="dinnerLabel">
+         <property name="text">
+          <string>Dinner</string>
+         </property>
+        </widget>
        </item>
        <item row="2" column="1">
-        <widget class="QLabel" name="label_4">
+        <widget class="QLabel" name="snackLabel">
          <property name="text">
-          <string>TextLabel</string>
+          <string>Snacks</string>
          </property>
         </widget>
        </item>
        <item row="3" column="0">
-        <widget class="QLabel" name="label_2">
-         <property name="text">
-          <string>TextLabel</string>
-         </property>
-        </widget>
+        <widget class="QListWidget" name="dinnerList"/>
        </item>
-       <item row="4" column="0">
-        <widget class="QListWidget" name="listWidget_2"/>
+       <item row="3" column="1">
+        <widget class="QListWidget" name="snackList"/>
        </item>
-       <item row="4" column="1">
-        <widget class="QListWidget" name="listWidget_4"/>
+       <item row="1" column="0">
+        <widget class="QListWidget" name="breakfastList"/>
        </item>
       </layout>
      </item>
      <item>
-      <layout class="QVBoxLayout" name="verticalLayout">
+      <layout class="QVBoxLayout" name="recipeListLayout">
        <item>
-        <widget class="QLabel" name="label_5">
+        <widget class="QLabel" name="recipeLabel">
          <property name="text">
-          <string>TextLabel</string>
+          <string>Recipes</string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="QListView" name="listView"/>
+        <widget class="QListView" name="recipeList"/>
        </item>
       </layout>
      </item>

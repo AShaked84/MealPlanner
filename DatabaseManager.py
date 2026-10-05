@@ -70,6 +70,8 @@ def removeRecipe(db_id):
     cursor = connection.cursor()
     
     cursor.execute("DELETE FROM Recipes WHERE id=?", [db_id])
+    cursor.execute("DELETE FROM Ingredients WHERE Recipe_ID=?", [db_id])
+
     connection.commit()
     connection.close()
 
