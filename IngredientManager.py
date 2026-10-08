@@ -24,6 +24,8 @@ def recipe_scraper(url):
     json_data = scraper.to_json()
     return json_data
 
+#print(recipe_scraper("https://www.budgetbytes.com/vegetarian-chili/"))
+
 def is_number_or_fraction(word):
     try:
         Fraction(word)

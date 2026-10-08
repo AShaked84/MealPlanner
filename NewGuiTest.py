@@ -133,9 +133,7 @@ class Ui_MainWindow(object):
         self.recipeList.setObjectName("recipeList")
         self.recipeListLayout.addWidget(self.recipeList)
         self.planningLayout.addLayout(self.recipeListLayout)
-        print("ABOUT TO POPULATE")
         self.populate_recipe_list(self.recipeList)
-        print("POPULATED")
 
         """
         self.changeMealPlanButton = QtWidgets.QPushButton(parent=self.planningLayoutWidget)
@@ -547,7 +545,6 @@ class Ui_MainWindow(object):
    #fills the recipe_list list widget with the recipe titles
     def populate_recipe_list(self, recipe_list):
         recipe_list_dictionary = DM.listRecipes()
-        print("RECIPES:", recipe_list_dictionary)
         
         for db_id, title in recipe_list_dictionary.items():
             item = QListWidgetItem(str(title))
