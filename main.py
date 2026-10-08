@@ -818,8 +818,9 @@ if __name__ == "__main__":
 """
 
 import sys
-from PyQt6.QtWidgets import QApplication, QListWidgetItem, QWidget, QHBoxLayout, QListWidget, QAbstractItemView
+from PyQt6.QtWidgets import QApplication, QLabel, QVBoxLayout, QHBoxLayout, QListWidgetItem, QWidget, QHBoxLayout, QListWidget, QAbstractItemView
 from PyQt6.QtCore import Qt
+from PyQt6 import QtWidgets
 import json
     
 class DropList(QListWidget):
@@ -831,13 +832,36 @@ class DropList(QListWidget):
         if item:
             print(item.data(Qt.ItemDataRole.UserRole))"""
     def dropEvent(self, event):
+        left_items = ["Apple", "Banana", "Cherry", "Date"]
         source = event.source()
         item = source.currentItem()
 
         if item:
             new_item = item.clone()
-            self.addItem(new_item)
-            print(new_item.data(Qt.ItemDataRole.UserRole))
+            item_widget = QtWidgets.QWidget()
+            item_layout = QVBoxLayout(item_widget)
+
+            db_id = new_item.data(Qt.ItemDataRole.UserRole)
+            title = QLabel(left_items[db_id])
+            details = QLabel(str(db_id))
+
+            title_layout = QHBoxLayout()
+            title_layout.addWidget(title)
+
+            item_layout.addLayout(title_layout)
+            item_layout.addWidget(details)
+
+            final_item = QListWidgetItem()
+            self.addItem(final_item)
+            self.setItemWidget(final_item, item_widget)
+
+            hint = item_widget.sizeHint()
+            safe_height = max(hint.height(), 45)
+            hint.setHeight(safe_height)
+
+            final_item.setSizeHint(hint)
+            #self.addItem(new_item)
+            #print(new_item)#.data(Qt.ItemDataRole.UserRole))
 
         event.acceptProposedAction()
 
