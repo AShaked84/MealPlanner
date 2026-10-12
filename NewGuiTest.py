@@ -97,13 +97,11 @@ class DropList(QListWidget):
         event.acceptProposedAction()
 
 
-
-
-
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1000, 600)
+        MainWindow.setFixedSize(1000, 600)
         self.MainWindow = MainWindow
         self.centralwidget = QtWidgets.QWidget(parent=MainWindow)
         self.centralwidget.setObjectName("centralwidget")
@@ -116,29 +114,111 @@ class Ui_MainWindow(object):
         self.top_layout.setContentsMargins(15, 15, 15, 15)
 
         self.top_section = QtWidgets.QVBoxLayout()
+        self.top_section.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
 
         self.mainButtonLayout = QtWidgets.QVBoxLayout()
         self.mainButtonLayout.setContentsMargins(15, 15, 15, 15)
         self.mainButtonLayout.setObjectName("mainButtonLayout")
+        #self.mainButtonLayout.setSizeConstraint(QVBoxLayout.SizeConstraint.SetMinimumSize)
 
         self.calendarWidget = QtWidgets.QCalendarWidget(parent=self.centralwidget)
         #self.calendarWidget.setGeometry(QtCore.QRect(21, 21, 200, 144))
-        #self.calendarWidget.setFixedSize(220,170)
+        self.calendarWidget.setFixedSize(300, 250)
         self.calendarWidget.setObjectName("calendarWidget")
         self.calendarWidget.clicked.connect(self.date_clicked)
         self.calendarWidget.setSelectedDate(QDate.currentDate())
         self.selected_date = QDate.currentDate()
         self.top_section.addWidget(self.calendarWidget)
 
+        self.top_section.setAlignment(
+                    self.calendarWidget,
+                    QtCore.Qt.AlignmentFlag.AlignTop
+                )
+        
+        self.manualRecipeButtonLayout = QVBoxLayout()
+
         self.manualRecipeButton = QtWidgets.QPushButton(parent=self.centralwidget)
         self.manualRecipeButton.setObjectName("manualRecipeButton")
-        self.mainButtonLayout.addWidget(self.manualRecipeButton)
+        self.manualRecipeButtonLayout.addWidget(self.manualRecipeButton)
+        self.mainButtonLayout.addLayout(self.manualRecipeButtonLayout)
+
+        self.manualRecipeForm = QWidget()
+        self.manualRecipeFormLayout = QFormLayout()
+
+        self.recipe_name_input = QLineEdit()
+        self.recipe_name_input.setPlaceholderText("Enter recipe title")
+        
+        self.serving_size_input = QLineEdit()
+        self.serving_size_input.setValidator(QIntValidator(1, 100))
+        self.serving_size_input.setPlaceholderText("Enter number of servings")
+
+        self.ingredients_input = QtWidgets.QTextEdit()
+        self.ingredients_input.setPlaceholderText("1 block of tofu, 2 limes, 3 tablespoons olive oil")
+
+        self.manualRecipeFormLayout.addRow("Title: ", self.recipe_name_input)
+        self.manualRecipeFormLayout.addRow("Servings: ", self.serving_size_input)
+        self.manualRecipeFormLayout.addRow("ingredients: ", self.ingredients_input)
+
+        manual_submit_button = QPushButton("Save Recipe")
+        manual_cancel_button = QPushButton("Cancel")
+
+        manual_button_layout = QHBoxLayout()
+        manual_button_layout.addWidget(manual_submit_button)
+        manual_button_layout.addWidget(manual_cancel_button)
+        
+        self.manualRecipeFormLayout.addRow(manual_button_layout)
+
+        manual_cancel_button.clicked.connect(self.add_my_recipe_form)
+        manual_submit_button.clicked.connect(
+        lambda: (
+        DM.addRecipe([
+            self.recipe_name_input.text(), 
+            self.serving_size_input.text(), 
+            json.dumps(self.ingredients_input.toPlainText().split(','))
+        ]), 
+        self.add_my_recipe_form(),
+        self.populate_recipe_list(self.recipeList)
+    ))
+
+        self.manualRecipeForm.setLayout(self.manualRecipeFormLayout)
+        self.manualRecipeButtonLayout.addWidget(self.manualRecipeForm)
+        self.manualRecipeForm.hide()
         self.manualRecipeButton.clicked.connect(self.add_my_recipe_form)
+
+        self.urlRecipeButtonLayout = QVBoxLayout()
 
         self.urlRecipeButton = QtWidgets.QPushButton(parent=self.centralwidget)
         self.urlRecipeButton.setObjectName("urlRecipeButton")
-        self.mainButtonLayout.addWidget(self.urlRecipeButton)
+        self.urlRecipeButtonLayout.addWidget(self.urlRecipeButton)
+        self.mainButtonLayout.addLayout(self.urlRecipeButtonLayout)
+
+        url_submit_button = QPushButton("Add Recipe")
+        url_cancel_button = QPushButton("Cancel")
+
+        url_button_layout = QHBoxLayout()
+        url_button_layout.addWidget(url_submit_button)
+        url_button_layout.addWidget(url_cancel_button)
+
+        self.urlRecipeButtonAddURL = QWidget()
+        self.urlRecipeButtonLineEditLayout = QVBoxLayout()
+        self.urlRecipeButtonLineEdit = QLineEdit()
+        self.urlRecipeButtonLineEdit.setPlaceholderText("Add recipe URL")
+        self.urlRecipeButtonLineEditLayout.addWidget(self.urlRecipeButtonLineEdit)
+        self.urlRecipeButtonLineEditLayout.addLayout(url_button_layout)
+
+        self.urlRecipeButtonAddURL.setLayout(
+            self.urlRecipeButtonLineEditLayout
+        )
+
+        self.urlRecipeButtonLayout.addWidget(
+            self.urlRecipeButtonAddURL
+        )
+
+        self.urlRecipeButtonAddURL.hide()
+
         self.urlRecipeButton.clicked.connect(self.add_recipe_URL_lineEdit)
+        url_cancel_button.clicked.connect(self.add_recipe_URL_lineEdit)
+        url_submit_button.clicked.connect(lambda:(DM.addRecipe(self.urlRecipeButtonLineEdit.text()), self.add_recipe_URL_lineEdit(), self.populate_recipe_list(self.recipeList)))
 
         """
         self.seeRecipesButton = QtWidgets.QPushButton(parent=self.centralwidget)
@@ -152,10 +232,10 @@ class Ui_MainWindow(object):
         self.groceryListButton.clicked.connect(self.show_shopping_list)
 
         self.top_section.addLayout(self.mainButtonLayout)
-        self.top_layout.addLayout(self.top_section)
+        self.top_layout.addLayout(self.top_section, 0)
 
         self.planningLayoutWidget = QtWidgets.QWidget(parent=self.centralwidget)
-        self.top_layout.addWidget(self.planningLayoutWidget)
+        self.top_layout.addWidget(self.planningLayoutWidget, 1)
         #self.planningLayoutWidget.setGeometry(QtCore.QRect(41, 191, 782, 434))
         self.planningLayoutWidget.setObjectName("planningLayoutWidget")
         self.planningLayout = QtWidgets.QHBoxLayout(self.planningLayoutWidget)
@@ -299,7 +379,6 @@ class Ui_MainWindow(object):
         self.centralwidget.setFocus()
 
         self.default_servings = 2
-
         
         #self.changeMealPlanButton.clicked.connect(self.fill_meal)
         #self.removeDishButton.clicked.connect(self.remove_meal)
@@ -707,6 +786,10 @@ class Ui_MainWindow(object):
 #opens dialog box with a space to add a URL
 #URL is then sent to the scraper that fills in the recipe
     def add_recipe_URL_lineEdit(self):
+        if self.urlRecipeButtonAddURL.isHidden():
+            self.urlRecipeButtonAddURL.show()
+        else:
+            self.urlRecipeButtonAddURL.hide()
         """self.recipe_input_field = QLineEdit(parent = self.centralwidget)
         add_new_recipe = QtWidgets.QPushButton(parent = self.centralwidget)
         self.recipe_input_field.setGeometry(40, 100, 200, 40)
@@ -714,13 +797,19 @@ class Ui_MainWindow(object):
         self.recipe_input_field.show()
         add_new_recipe.show()
         add_new_recipe.clicked.connect(lambda checked: DM.addRecipe(self.recipe_input_field.text()))"""
-        text, ok = QInputDialog.getText(self.centralwidget, "Add Recipe URL", "Enter Recipe URL: ")
+        """text, ok = QInputDialog.getText(self.centralwidget, "Add Recipe URL", "Enter Recipe URL: ")
         if ok and text:
-            DM.addRecipe(text)
+            DM.addRecipe(text)"""
 
 #opens a dialog box that allows users to manually enter their own recipes
     def add_my_recipe_form(self):
-        recipe_form = QDialog(parent = self.centralwidget)
+        if self.manualRecipeForm.isHidden():
+            self.manualRecipeForm.show()
+            self.calendarWidget.hide()
+        else:
+            self.manualRecipeForm.hide()
+            self.calendarWidget.show()
+        """recipe_form = QDialog(parent = self.centralwidget)
         recipe_form.setWindowTitle("Add Recipe Manually")
 
         form_layout = QFormLayout(parent = recipe_form)
@@ -761,7 +850,7 @@ class Ui_MainWindow(object):
     )
 )
         
-        recipe_form.exec()
+        recipe_form.exec()"""
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate

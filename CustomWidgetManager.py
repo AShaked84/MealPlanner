@@ -38,10 +38,10 @@ class MealListItem(QWidget):
         self.item_layout.addWidget(self.details)
 
         self.minus_button.clicked.connect(
-            lambda: self.request_serving_change.emit(self.meal_id, -1)
+            lambda: self.request_serving_change(-1)
         )
         self.plus_button.clicked.connect(
-            lambda: self.request_serving_change.emit(self.meal_id, 1)
+            lambda: self.request_serving_change(1)
         )
 
     def request_serving_change(self, delta):
