@@ -1,13 +1,103 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtWidgets import QSpinBox, QLineEdit, QListWidget, QInputDialog, QFormLayout, QDialog, QPushButton, QHBoxLayout, QVBoxLayout, QTextEdit, QListWidgetItem, QLabel
+from PyQt6.QtWidgets import QSpinBox, QAbstractItemView, QWidget, QLineEdit, QListWidget, QInputDialog, QFormLayout, QDialog, QPushButton, QHBoxLayout, QVBoxLayout, QTextEdit, QListWidgetItem, QLabel
 from PyQt6.QtGui import QIntValidator, QTextCharFormat
-from PyQt6.QtCore import QDate, Qt, QPoint
+from PyQt6.QtCore import QDate, Qt, QPoint, pyqtSignal
 import json
+from datetime import datetime
 from qt_material import apply_stylesheet, list_themes
 
 import DatabaseManager as DM
 import IngredientManager as IM
 import MealManager as MM
+from CustomWidgetManager import MealListItem
+
+class DropList(QListWidget):
+
+    recipe_dropped = pyqtSignal(int)
+
+    def __init__(self, ui_manager, parent = None):
+        super().__init__(parent)
+        self.ui_manager = ui_manager
+        
+        self.setAcceptDrops(True)
+        self.setDragEnabled(True)
+        self.setDragDropMode(QListWidget.DragDropMode.DropOnly)
+
+    def dropEvent(self, event):
+        source = event.source()
+        item = source.currentItem()
+
+        if item is None:
+            event.ignore()
+            return
+
+        db_id = item.data(Qt.ItemDataRole.UserRole)
+
+        meal_id = DM.addMeal(
+            self.ui_manager.selected_date.toString("yyyy-MM-dd"),
+            self.objectName()[:-4],
+            db_id,
+            self.ui_manager.default_servings
+        )
+
+        item_widget = MealListItem(
+            db_id,
+            meal_id,
+            self.ui_manager.default_servings
+        )
+
+        item_widget.servings_change_requested.connect(
+            lambda meal_id, delta, widget=item_widget:
+                self.ui_manager.change_serving(meal_id, delta, widget)
+        )
+
+        final_item = QListWidgetItem()
+        self.addItem(final_item)
+        self.setItemWidget(final_item, item_widget)
+
+        hint = item_widget.sizeHint()
+        hint.setHeight(max(hint.height(), 45))
+        final_item.setSizeHint(hint)
+
+        
+        #date_selected = self.ui_manager.date_selected
+        """
+        if item:
+            new_item = item.clone()
+            item_widget = QtWidgets.QWidget()
+            item_layout = QVBoxLayout(item_widget)
+
+            db_id = new_item.data(Qt.ItemDataRole.UserRole)
+            title = QLabel(DM.idRecipe(db_id))
+            details = QLabel("add info here")
+
+            details.hide()
+
+            title_layout = QHBoxLayout()
+            title_layout.addWidget(title)
+
+            item_layout.addLayout(title_layout)
+            item_layout.addWidget(details)
+
+            final_item = QListWidgetItem()
+            self.addItem(final_item)
+            self.setItemWidget(final_item, item_widget)
+
+            hint = item_widget.sizeHint()
+            safe_height = max(hint.height(), 45)
+            hint.setHeight(safe_height)
+
+            final_item.setSizeHint(hint)"""
+        """
+            meal_type = self.objectName()[:-4]
+            servings = self.ui_manager.default_servings
+
+            DM.addMeal(date_selected, meal_type, db_id, servings)"""
+
+        event.acceptProposedAction()
+
+
+
 
 
 class Ui_MainWindow(object):
@@ -36,6 +126,8 @@ class Ui_MainWindow(object):
         #self.calendarWidget.setFixedSize(220,170)
         self.calendarWidget.setObjectName("calendarWidget")
         self.calendarWidget.clicked.connect(self.date_clicked)
+        self.calendarWidget.setSelectedDate(QDate.currentDate())
+        self.selected_date = QDate.currentDate()
         self.top_section.addWidget(self.calendarWidget)
 
         self.manualRecipeButton = QtWidgets.QPushButton(parent=self.centralwidget)
@@ -78,7 +170,7 @@ class Ui_MainWindow(object):
         self.breakfastLabel = QtWidgets.QLabel(parent = self.planningLayoutWidget)
         self.breakfastLabel.setObjectName("Breakfast")
         self.breakfastLabel.setText("Breakfast")
-        self.breakfastList = QtWidgets.QListWidget(parent = self.planningLayoutWidget)
+        self.breakfastList = DropList(self, self.centralwidget)
         self.breakfastList.setObjectName("BreakfastList")
         self.breakfastList.itemClicked.connect(self.recipe_selected)
         self.breakfastLayout.addWidget(self.breakfastLabel)
@@ -90,7 +182,7 @@ class Ui_MainWindow(object):
         self.lunchLabel = QtWidgets.QLabel(parent = self.planningLayoutWidget)
         self.lunchLabel.setObjectName("Lunch")
         self.lunchLabel.setText("Lunch")
-        self.lunchList = QtWidgets.QListWidget(parent = self.planningLayoutWidget)
+        self.lunchList = DropList(self, self.centralwidget)
         self.lunchList.setObjectName("LunchList")
         self.lunchList.itemClicked.connect(self.recipe_selected)
         self.lunchLayout.addWidget(self.lunchLabel)
@@ -102,7 +194,7 @@ class Ui_MainWindow(object):
         self.dinnerLabel = QtWidgets.QLabel(parent = self.planningLayoutWidget)
         self.dinnerLabel.setObjectName("Dinner")
         self.dinnerLabel.setText("Dinner")
-        self.dinnerList = QtWidgets.QListWidget(parent = self.planningLayoutWidget)
+        self.dinnerList = DropList(self, self.centralwidget)
         self.dinnerList.setObjectName("DinnerList")
         self.dinnerList.itemClicked.connect(self.recipe_selected)
         self.dinnerLayout.addWidget(self.dinnerLabel)
@@ -114,7 +206,8 @@ class Ui_MainWindow(object):
         self.snacksLabel = QtWidgets.QLabel(parent = self.planningLayoutWidget)
         self.snacksLabel.setObjectName("Snacks")
         self.snacksLabel.setText("Snacks")
-        self.snacksList = QtWidgets.QListWidget(parent = self.planningLayoutWidget)
+        self.snacksList = DropList(self, self.centralwidget)
+        #self.snacksList = QtWidgets.QListWidget(parent = self.planningLayoutWidget)
         self.snacksList.setObjectName("SnacksList")
         self.snacksList.itemClicked.connect(self.recipe_selected)
         self.snacksLayout.addWidget(self.snacksLabel)
@@ -135,6 +228,15 @@ class Ui_MainWindow(object):
         self.planningLayout.addLayout(self.recipeListLayout)
         self.populate_recipe_list(self.recipeList)
 
+        self.recipeList.setDragEnabled(True)
+        self.recipeList.setAcceptDrops(False)
+        self.recipeList.setDragDropMode(QAbstractItemView.DragDropMode.DragOnly)
+
+        self.snacksList.setDragEnabled(False)
+        self.snacksList.setAcceptDrops(True)
+        self.snacksList.setDragDropMode(QAbstractItemView.DragDropMode.DropOnly)
+
+        self.refresh_menus(self.selected_date.toString("yyyy-MM-dd"))
         """
         self.changeMealPlanButton = QtWidgets.QPushButton(parent=self.planningLayoutWidget)
         self.changeMealPlanButton.setObjectName("changeMealPlanButton")
@@ -348,7 +450,29 @@ class Ui_MainWindow(object):
     #when recipe is clicked, a remove dish button is shown
     #called for the menus
     def recipe_selected(self, item):
-        for meal_list in [
+
+        clicked_list = item.listWidget()
+
+        meal_lists = [
+            self.breakfastList,
+            self.lunchList,
+            self.dinnerList,
+            self.snacksList
+        ]
+
+        for meal_list in meal_lists:
+            if meal_list != clicked_list:
+                meal_list.clearSelection()
+
+        # Expand/collapse the clicked meal's details
+        item_widget = clicked_list.itemWidget(item)
+
+        if item_widget:
+            item_widget.details.setVisible(
+                not item_widget.details.isVisible()
+            )
+            item.setSizeHint(item_widget.sizeHint())
+        """for meal_list in [
             self.breakfastList,
             self.lunchList,
             self.dinnerList,
@@ -365,7 +489,7 @@ class Ui_MainWindow(object):
 
         details = item_widget.layout().itemAt(1).widget()
         details.setVisible(not details.isVisible())
-        item.setSizeHint(item_widget.sizeHint())
+        item.setSizeHint(item_widget.sizeHint())"""
 
     #when recipe is clicked, a remove recipe button is shown that allows users to delete chosen recipe from Recipes database
     #def recipe_book_selected(self, item):
@@ -397,14 +521,32 @@ class Ui_MainWindow(object):
         rows = DM.todaysMeals(date_string)
         #row[0] - id row[1] - date row[2] - meal type row[3] recipe_id row[4] - servings
         
-        """for row in rows:
-            meal_list = getattr(self, row[2].lower() + "List") 
+        for row in rows:
+            meal_list = getattr(self, row[2].lower() + "List")
+
+            meal_id = row[0]
+            db_id = row[3]
+            servings = row[4]
+
+            item = QListWidgetItem()
+            item_widget = MealListItem(db_id, meal_id, servings)
+
+            item_widget.servings_change_requested.connect(lambda meal_id, delta, widget=item_widget:
+                                                          self.change_serving(meal_id, delta, widget)
+                                                          )
+            meal_list.addItem(item)
+            meal_list.setItemWidget(item, item_widget)
+
+            hint = item_widget.sizeHint()
+            hint.setHeight(max(hint.height(), 45))
+            item.setSizeHint(hint)
+            """meal_list = getattr(self, row[2].lower() + "List") 
             item = QListWidgetItem(DM.idRecipe(row[3]))
             item.setData(Qt.ItemDataRole.UserRole, row[0])
             meal_list.addItem(item)"""
 
-        for row in rows:
-            meal_list = getattr(self, row[2].lower() + "List") #which menu to add item to?
+        #for row in rows:
+            """meal_list = getattr(self, row[2].lower() + "List") #which menu to add item to?
             item_widget = QtWidgets.QWidget()
             layout = QVBoxLayout(item_widget)
 
@@ -451,7 +593,7 @@ class Ui_MainWindow(object):
             plus_button.clicked.connect(lambda _, current_item = item, current_label = serving_label: self.change_serving(current_item, current_label, 1))
             minus_button.clicked.connect(lambda _, current_item = item, current_label = serving_label: self.change_serving(current_item, current_label, -1))
 
-            #meal_list.itemClicked.connect(lambda item: self.expand_item(meal_list, item))
+            #meal_list.itemClicked.connect(lambda item: self.expand_item(meal_list, item))"""
     """
     def expand_item(self, item):
         item_widget = self.sender()
@@ -460,16 +602,16 @@ class Ui_MainWindow(object):
         item.sizeHint(item_widget.setSizeHint())"""
 
     #add a serving to a menu item
-    def change_serving(self, item, label, delta):
+    def change_serving(self, meal_id, delta, item_widget):
 
-        meal_id = int(item.data(Qt.ItemDataRole.UserRole + 2))
-        servings = DM.get_servings(meal_id)[0]#[0]
+        current_servings = DM.get_servings(meal_id)[0]#[0]
+        if current_servings + delta < 1:
+            return
 
         DM.change_servings(meal_id, delta)
 
-        servings += delta
-        item.setData(Qt.ItemDataRole.UserRole + 1, servings)
-        label.setText(str(servings))
+        updated_servings = DM.get_servings(meal_id)[0]
+        item_widget.set_servings(updated_servings)
 
 
     #when date is clicked on recipe widget, change meal plan button appears

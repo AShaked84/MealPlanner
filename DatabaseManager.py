@@ -125,8 +125,10 @@ def addMeal(date, meal, recipe_id, servings):
     data = [date, meal, recipe_id, servings]
 
     cursor.execute("INSERT INTO 'MealPlan' ('date', 'meal', 'recipe_id', 'servings') VALUES (?,?,?, ?)", data)
+    meal_id = cursor.lastrowid
     connection.commit()
     connection.close()
+    return meal_id
     
 #function will recieve either a link to a recipe or a string with the recipe information [recipe title, servings, ingredients] and add the recipe to the database
 def addRecipe(recipe: str | list[str]):
