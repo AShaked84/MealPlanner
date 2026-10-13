@@ -7,6 +7,24 @@ import IngredientManager as IM
 
 BASE_DIR = Path(__file__).resolve().parent
 db_path = BASE_DIR / "Database" / "RecipeBook.db"
+
+def getIngredients(db_id):
+    connection = sqlite3.connect(str(db_path))
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT Ingredient, Amount, Unit, Default_Amount from Ingredients where Recipe_ID=?", (db_id,))
+    rows = cursor.fetchall()
+    return rows
+
+
+def mealDate(meal_id):
+    connection = sqlite3.connect(str(db_path))
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT date from MealPlan where id=?", (meal_id,))
+    rows = cursor.fetchone()
+    return rows 
+
 #pulls up the list of recipes for the days betweeen the two in the list "dates"
 def daysAhead(dates):
     connection = sqlite3.connect(str(db_path))
@@ -160,12 +178,11 @@ def addRecipe(recipe: str | list[str]):
     connection.commit()
     recipe_id = cursor.lastrowid
 
-    #ingredient_list = ingredient_list.append(cursor.lastrowid)
     cleaned_ingredients = []
-    for ingredient, quantity in ingredient_list:
-        cleaned_ingredients.append((ingredient, quantity.magnitude, str(quantity.units), recipe_id))
+    for ingredient, quantity, default_quantity in ingredient_list:
+        cleaned_ingredients.append((ingredient, quantity.magnitude, str(quantity.units), recipe_id, default_quantity.magnitude))
 
-    cursor.executemany("INSERT INTO Ingredients (Ingredient, Amount, Unit, Recipe_ID) VALUES (?, ?, ?, ?)", cleaned_ingredients)
+    cursor.executemany("INSERT INTO Ingredients (Ingredient, Amount, Unit, Recipe_ID, Default_Amount) VALUES (?, ?, ?, ?, ?)", cleaned_ingredients)
     connection.commit()
     connection.close()
 
@@ -182,13 +199,13 @@ def loadRecipes(self):
 def listRecipes():
     connection = sqlite3.connect(str(db_path))
     cursor = connection.cursor()
-    result = cursor.execute("SELECT * FROM Recipes")
+    result = cursor.execute("SELECT id FROM Recipes")
     recipes = result.fetchall()
-    recipe_list = {}
+    recipe_list = []
 
     for recipe in recipes:
         #return dictionary {db_id:title}
-        recipe_list[recipe[0]] = recipe[1]
+        recipe_list.append(recipe)
 
     connection.close()
     return recipe_list

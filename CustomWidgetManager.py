@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QVBoxLayout, QWidget, QLabel, QHBoxLayout, QPushButton
+from PyQt6.QtWidgets import QFormLayout, QListWidget, QSizePolicy, QVBoxLayout, QWidget, QLabel, QHBoxLayout, QPushButton
 from PyQt6.QtCore import pyqtSignal
 
 import DatabaseManager as DM
@@ -50,35 +50,51 @@ class MealListItem(QWidget):
     def set_servings(self, servings):
         self.serving_label.setText(str(servings))
 
-"""from PyQt6 import QtWidgets
-from PyQt6.QtWidgets import (
-    QWidget,
-    QLabel,
-    QHBoxLayout,
-    QVBoxLayout,
-    QListWidgetItem
-)
-from PyQt6.QtCore import Qt
-
-import DatabaseManager as DM
-
-class MealListItem(QWidget):
-    def __init__(self, db_id, selected_date, parent = None):
+class RecipeCard(QWidget):
+    def __init__(self, db_id, parent = None):
         super().__init__(parent)
 
         self.db_id = db_id
-        self.selected_date = selected_date
 
-        self.item_layout = QHBoxLayout()
+        self.item_layout = QVBoxLayout(self)
+        self.item_layout.setContentsMargins(15, 15, 15, 15)
+        self.item_layout.setSpacing(8)
 
-        self.title_layout = QHBoxLayout()
         self.title = QLabel(DM.idRecipe(db_id))
-        self.title_layout.addWidget(self.title)
+        self.title.setMinimumHeight(self.title.sizeHint().height())
+        self.item_layout.addWidget(self.title)
 
-        self.item_layout.addLayout(self.title_layout)
+        self.details = QWidget()
+        self.detailsLayout = QFormLayout(self.details)
 
-        self.details = QLabel(str(db_id))
-        self.details.hide()
+        servings = str(DM.recipeServings(db_id)[0])
+        self.default_servings = QLabel(servings)
+        ingredients = DM.getIngredients(db_id)
+        print(ingredients)
+
+        self.detailsLayout.addRow("Default servings: ", self.default_servings)
+        for ingredient in ingredients:
+            self.detailsLayout.addRow(str(ingredient[3]) + " " + ingredient[2], QLabel(ingredient[0]))
 
         self.item_layout.addWidget(self.details)
-        self.setLayout(self.item_layout)"""
+
+        """self.details = QLabel("Placeholder text")
+        self.item_layout.addWidget(self.details)"""
+        self.details.hide()
+
+    """def update_size(self):
+        self.item_layout.activate()
+        return self.item_layout.sizeHint()"""
+
+    def update_size(self):
+        # Activate inner layouts first, then the outer one
+        self.details.layout().activate()
+        self.item_layout.invalidate()
+        self.item_layout.activate()
+
+        # Use the widget's sizeHint, which includes margins
+        hint = self.sizeHint()
+
+        # Optionally enforce the width of the list so wrapping labels compute correctly
+        return hint
+

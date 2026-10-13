@@ -108,7 +108,7 @@ def list_cleaner(ingredients, recipe_scalar):
         else:
             unit_obj = ureg.count
 
-        ingredient_list.append([ingredient, (amount * recipe_scalar) * unit_obj])
+        ingredient_list.append([ingredient, (amount * recipe_scalar) * unit_obj, (amount * unit_obj)])
 
     return ingredient_list
 

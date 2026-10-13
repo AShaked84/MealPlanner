@@ -1,7 +1,7 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtWidgets import QSpinBox, QAbstractItemView, QWidget, QLineEdit, QListWidget, QInputDialog, QFormLayout, QDialog, QPushButton, QHBoxLayout, QVBoxLayout, QTextEdit, QListWidgetItem, QLabel
 from PyQt6.QtGui import QIntValidator, QTextCharFormat
-from PyQt6.QtCore import QDate, Qt, QPoint, pyqtSignal
+from PyQt6.QtCore import QDate, QSize, QTimer, Qt, QPoint, pyqtSignal
 import json
 from datetime import datetime
 from qt_material import apply_stylesheet, list_themes
@@ -9,7 +9,7 @@ from qt_material import apply_stylesheet, list_themes
 import DatabaseManager as DM
 import IngredientManager as IM
 import MealManager as MM
-from CustomWidgetManager import MealListItem
+from CustomWidgetManager import MealListItem, RecipeCard
 
 class DropList(QListWidget):
 
@@ -304,6 +304,7 @@ class Ui_MainWindow(object):
         self.recipeListLayout.addWidget(self.recipeLabel)
         self.recipeList = QtWidgets.QListWidget(parent=self.planningLayoutWidget)
         self.recipeList.setObjectName("recipeList")
+        self.recipeList.itemClicked.connect(self.expand_recipe_card)
         self.recipeListLayout.addWidget(self.recipeList)
         self.planningLayout.addLayout(self.recipeListLayout)
         self.populate_recipe_list(self.recipeList)
@@ -684,7 +685,12 @@ class Ui_MainWindow(object):
     def change_serving(self, meal_id, delta, item_widget):
 
         current_servings = DM.get_servings(meal_id)[0]#[0]
-        if current_servings + delta < 1:
+        if current_servings + delta < 0:
+            return
+
+        if current_servings + delta == 0:
+            DM.removeMeal(meal_id)
+            self.refresh_menus(self.selected_date.toString("yyyy-MM-dd"))
             return
 
         DM.change_servings(meal_id, delta)
@@ -765,14 +771,47 @@ class Ui_MainWindow(object):
    #gets all the recipes titles from the Recipes database table, tags them with their ID number
    #fills the recipe_list list widget with the recipe titles
     def populate_recipe_list(self, recipe_list):
-        recipe_list_dictionary = DM.listRecipes()
+        recipe_list.clear()
+        #recipe_list_ids = DM.listRecipes()
+        for db_id in DM.listRecipes():
+            card = RecipeCard(db_id[0])
+
+            item = QListWidgetItem()
+            item.setData(Qt.ItemDataRole.UserRole, db_id[0])
+
+            recipe_list.addItem(item)
+            recipe_list.setItemWidget(item, card)
+
+            item.setSizeHint(card.update_size())
+
+        #recipe_list.itemClicked.connect(self.expand_recipe_card)
         
-        for db_id, title in recipe_list_dictionary.items():
+        """for db_id, title in recipe_list_dictionary.items():
             item = QListWidgetItem(str(title))
             item.setData(Qt.ItemDataRole.UserRole, db_id)
-            recipe_list.addItem(item)
+            recipe_list.addItem(item)"""
+
+    """def expand_recipe_card(self, item):
+        card = self.recipeList.itemWidget(item)
+        if card.details.isHidden():
+            card.details.show()
+        else:
+            card.details.hide()
+
+        card.item_layout.activate()
+
+        item.setSizeHint(card.update_size())
+        self.recipeList.doItemsLayout()"""
 
 
+    def expand_recipe_card(self, item):
+        card = self.recipeList.itemWidget(item)
+        card.details.setVisible(card.details.isHidden())
+
+        card.layout().activate()
+        hint = card.sizeHint()
+        item.setSizeHint(QSize(hint.width(), hint.height() + 8))
+        self.recipeList.doItemsLayout()
     #returns the invisible tag for a tagged item 
     # used when the item's tag should be saved rather than what's visible to the user
     # called by the fill meal function
