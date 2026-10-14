@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QFormLayout, QListWidget, QSizePolicy, QVBoxLayout, QWidget, QLabel, QHBoxLayout, QPushButton
+from PyQt6.QtWidgets import QFormLayout, QFrame, QListWidget, QSizePolicy, QVBoxLayout, QWidget, QLabel, QHBoxLayout, QPushButton
 from PyQt6.QtCore import pyqtSignal
 
 import DatabaseManager as DM
@@ -22,7 +22,16 @@ class MealListItem(QWidget):
         self.minus_button = QPushButton("-")
         self.plus_button = QPushButton("+")
 
-        self.details = QLabel("Placeholder text")
+        self.ingredients = DM.getIngredients(db_id)
+
+        #self.details = QLabel("Placeholder text")
+        self.details = QWidget()
+        self.detailsLayout = QFormLayout(self.details)
+
+        for ingredient in self.ingredients:
+            scaled_ingredient = round(ingredient[1] * servings, 2)
+            self.detailsLayout.addRow(str(scaled_ingredient) + " " + ingredient[2], QLabel(ingredient[0]))
+
         self.details.hide()
 
         self.minus_button.setFixedSize(25, 25)
@@ -49,6 +58,10 @@ class MealListItem(QWidget):
 
     def set_servings(self, servings):
         self.serving_label.setText(str(servings))
+        for row, ingredient in enumerate(self.ingredients):
+            label = self.detailsLayout.itemAt(row, QFormLayout.ItemRole.LabelRole).widget()
+            label.setText(f"{ingredient[1] * servings:g} {ingredient[2]}")
+
 
 class RecipeCard(QWidget):
     def __init__(self, db_id, parent = None):
@@ -70,11 +83,17 @@ class RecipeCard(QWidget):
         servings = str(DM.recipeServings(db_id)[0])
         self.default_servings = QLabel(servings)
         ingredients = DM.getIngredients(db_id)
-        print(ingredients)
 
         self.detailsLayout.addRow("Default servings: ", self.default_servings)
+
+        line = QFrame()
+        line.setFrameShape(QFrame.Shape.HLine)
+        line.setFrameShadow(QFrame.Shadow.Plain)
+
+        self.detailsLayout.addRow(line)
+        
         for ingredient in ingredients:
-            self.detailsLayout.addRow(str(ingredient[3]) + " " + ingredient[2], QLabel(ingredient[0]))
+            self.detailsLayout.addRow(str(round(ingredient[3], 2)) + " " + ingredient[2], QLabel(ingredient[0]))
 
         self.item_layout.addWidget(self.details)
 

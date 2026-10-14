@@ -8,6 +8,19 @@ import IngredientManager as IM
 BASE_DIR = Path(__file__).resolve().parent
 db_path = BASE_DIR / "Database" / "RecipeBook.db"
 
+def searchRecipes(term):
+    #term = term.replace("\\", "\\\").replace("%", "\\%").replave("_")
+    pattern = f"%{term}%"
+
+    connection = sqlite3.connect(str(db_path))
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT DISTINCT r.ID FROM Recipes r LEFT JOIN Ingredients i on i.Recipe_ID = r.ID WHERE r.RecipeName LIKE ? ESCAPE '\\' OR i.Ingredient LIKE ? ESCAPE '\\'", (pattern, pattern))
+
+    ids = {row[0] for row in cursor.fetchall()}
+    connection.close()
+    return ids
+
 def getIngredients(db_id):
     connection = sqlite3.connect(str(db_path))
     cursor = connection.cursor()

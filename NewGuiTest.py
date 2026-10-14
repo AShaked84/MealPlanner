@@ -100,8 +100,8 @@ class DropList(QListWidget):
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1000, 600)
-        MainWindow.setFixedSize(1000, 600)
+        MainWindow.resize(1200, 600)
+        #MainWindow.setFixedSize(1200, 600)
         self.MainWindow = MainWindow
         self.centralwidget = QtWidgets.QWidget(parent=MainWindow)
         self.centralwidget.setObjectName("centralwidget")
@@ -302,6 +302,17 @@ class Ui_MainWindow(object):
         self.recipeLabel.setObjectName("recipeLabel")
         self.recipeLabel.setText("Recipes")
         self.recipeListLayout.addWidget(self.recipeLabel)
+
+        self.searchRecipesLayout = QHBoxLayout()
+        self.searchRecipesLineEdit = QLineEdit()#parent=self.planningLayout)
+        self.searchRecipesLineEdit.setClearButtonEnabled(True)
+        self.searchRecipesLineEdit.setPlaceholderText("Search Recipes")
+        self.searchRecipesLineEdit.textChanged.connect(self.filter_recipes)
+        self.searchRecipesLayout.addWidget(self.searchRecipesLineEdit)
+        #self.searchRecipesButton = QPushButton("Go")
+        #self.searchRecipesLayout.addWidget(self.searchRecipesButton)
+        self.recipeListLayout.addLayout(self.searchRecipesLayout)
+
         self.recipeList = QtWidgets.QListWidget(parent=self.planningLayoutWidget)
         self.recipeList.setObjectName("recipeList")
         self.recipeList.itemClicked.connect(self.expand_recipe_card)
@@ -312,6 +323,9 @@ class Ui_MainWindow(object):
         self.recipeList.setDragEnabled(True)
         self.recipeList.setAcceptDrops(False)
         self.recipeList.setDragDropMode(QAbstractItemView.DragDropMode.DragOnly)
+
+        #self.searchRecipesButton.clicked.connect(lambda: self.search_recipes(self.recipeList))
+        #self.searchRecipesLineEdit.returnPressed.connect(lambda: self.search_recipes(self.recipeList))
 
         self.snacksList.setDragEnabled(False)
         self.snacksList.setAcceptDrops(True)
@@ -384,6 +398,18 @@ class Ui_MainWindow(object):
         #self.changeMealPlanButton.clicked.connect(self.fill_meal)
         #self.removeDishButton.clicked.connect(self.remove_meal)
 
+    def filter_recipes(self, text):
+        text = text.strip()
+        matches = DM.searchRecipes(text) if text else None
+
+        for i in range(self.recipeList.count()):
+            item = self.recipeList.item(i)
+            recipe_id = item.data(Qt.ItemDataRole.UserRole)
+            item.setHidden(matches is not None and recipe_id not in matches)
+
+    def search_recipes(self, recipe_list):
+        recipe_list.clear()
+    
     def connect_signals(self, themes):
         for theme in themes:
             action = QtGui.QAction(theme, parent=self.menuColorScheme)
@@ -783,6 +809,9 @@ class Ui_MainWindow(object):
             recipe_list.setItemWidget(item, card)
 
             item.setSizeHint(card.update_size())
+
+            if recipe_list is self.recipeList:
+                self.filter_recipes(self.searchRecipesLineEdit.text())
 
         #recipe_list.itemClicked.connect(self.expand_recipe_card)
         
