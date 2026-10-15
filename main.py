@@ -1,4 +1,4 @@
-"""import sys
+import sys
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QApplication, QMainWindow, QListWidget, QMenu, QMessageBox
 
@@ -50,26 +50,4 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
-    sys.exit(app.exec())"""
-
-from PyQt6.QtWidgets import QApplication
-
-from pyqt_search_bar import SearchBar
-
-
-
-if __name__ == "__main__":
-
-    import sys
-
-
-
-    app = QApplication(sys.argv)
-
-    searchBar = SearchBar()
-
-    searchBar.setPlaceHolder('Input the text...')
-
-    searchBar.show()
-
-    app.exec_()
+    sys.exit(app.exec())

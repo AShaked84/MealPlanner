@@ -1,9 +1,8 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtWidgets import QSpinBox, QAbstractItemView, QWidget, QLineEdit, QListWidget, QInputDialog, QFormLayout, QDialog, QPushButton, QHBoxLayout, QVBoxLayout, QTextEdit, QListWidgetItem, QLabel
-from PyQt6.QtGui import QIntValidator, QTextCharFormat
-from PyQt6.QtCore import QDate, QSize, QTimer, Qt, QPoint, pyqtSignal
+from PyQt6.QtWidgets import QMenu, QSpinBox, QAbstractItemView, QWidget, QLineEdit, QListWidget, QFormLayout, QDialog, QPushButton, QHBoxLayout, QVBoxLayout, QListWidgetItem, QLabel
+from PyQt6.QtGui import QIntValidator
+from PyQt6.QtCore import QDate, QSize, Qt, pyqtSignal
 import json
-from datetime import datetime
 from qt_material import apply_stylesheet, list_themes
 
 import DatabaseManager as DM
@@ -20,14 +19,14 @@ class DropList(QListWidget):
         self.ui_manager = ui_manager
         
         self.setAcceptDrops(True)
-        self.setDragEnabled(True)
+        self.setDragEnabled(False)
         self.setDragDropMode(QListWidget.DragDropMode.DropOnly)
 
     def dropEvent(self, event):
         source = event.source()
         item = source.currentItem()
 
-        if item is None:
+        if item is None or item.data(Qt.ItemDataRole.UserRole) is None:
             event.ignore()
             return
 
@@ -45,6 +44,8 @@ class DropList(QListWidget):
             meal_id,
             self.ui_manager.default_servings
         )
+
+        item.setData(Qt.ItemDataRole.UserRole, db_id)
 
         item_widget.servings_change_requested.connect(
             lambda meal_id, delta, widget=item_widget:
@@ -257,6 +258,9 @@ class Ui_MainWindow(object):
         self.breakfastLayout.addWidget(self.breakfastList)
         self.menuLayout.addLayout(self.breakfastLayout, 0, 0)
 
+        self.breakfastList.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.breakfastList.customContextMenuRequested.connect(self.right_click_menu_item)
+
         self.lunchLayout = QtWidgets.QVBoxLayout()
         self.lunchLayout.setObjectName("LunchLayout")
         self.lunchLabel = QtWidgets.QLabel(parent = self.planningLayoutWidget)
@@ -327,11 +331,11 @@ class Ui_MainWindow(object):
         #self.searchRecipesButton.clicked.connect(lambda: self.search_recipes(self.recipeList))
         #self.searchRecipesLineEdit.returnPressed.connect(lambda: self.search_recipes(self.recipeList))
 
-        self.snacksList.setDragEnabled(False)
+        """self.snacksList.setDragEnabled(False)
         self.snacksList.setAcceptDrops(True)
-        self.snacksList.setDragDropMode(QAbstractItemView.DragDropMode.DropOnly)
+        self.snacksList.setDragDropMode(QAbstractItemView.DragDropMode.DropOnly)"""
 
-        self.refresh_menus(self.selected_date.toString("yyyy-MM-dd"))
+        self.refresh_menus(self.selected_date)#.toString("yyyy-MM-dd"))
         """
         self.changeMealPlanButton = QtWidgets.QPushButton(parent=self.planningLayoutWidget)
         self.changeMealPlanButton.setObjectName("changeMealPlanButton")
@@ -397,6 +401,31 @@ class Ui_MainWindow(object):
         
         #self.changeMealPlanButton.clicked.connect(self.fill_meal)
         #self.removeDishButton.clicked.connect(self.remove_meal)
+
+    def right_click_menu_item(self, position):
+        meal_list = self.MainWindow.sender()#.objectName()
+        meal_name = meal_list.objectName()[:-4]
+        clicked_item = meal_list.itemAt(position)
+
+        if clicked_item is None:
+            return
+        
+        meal_id = clicked_item.data(Qt.ItemDataRole.UserRole)
+        recipe_id = DM.meal_recipe(meal_id)
+
+        menu = QMenu(meal_list)
+        default_daily = menu.addAction(f"Make default daily {meal_name.lower()}")
+        default_weekly = menu.addAction(f"Make default {self.selected_date.toString("dddd")} {meal_name.lower()}")
+
+        global_position = meal_list.viewport().mapToGlobal(position)
+        selected_action = menu.exec(global_position)
+
+        if selected_action == default_daily:
+            for i in range(1, 8):
+                DM.addDefaultMeal(meal_name, recipe_id, i, DM.get_servings(meal_id)[0])
+
+        elif selected_action == default_weekly:
+            DM.addDefaultMeal(meal_name, recipe_id, self.selected_date.dayOfWeek(), DM.get_servings(meal_id)[0])
 
     def filter_recipes(self, text):
         text = text.strip()
@@ -618,12 +647,14 @@ class Ui_MainWindow(object):
 
     #fills in the menus with the recipes saved for each meal
     #refreshes the menus after update
-    def refresh_menus(self, date_string):
+    def refresh_menus(self, date):
+        date_string = date.toString("yyyy-MM-dd")
         self.breakfastList.clear()
         self.lunchList.clear()
         self.dinnerList.clear()
         self.snacksList.clear()
 
+        DM.apply_defaults(date)
         rows = DM.todaysMeals(date_string)
         #row[0] - id row[1] - date row[2] - meal type row[3] recipe_id row[4] - servings
         
@@ -636,6 +667,7 @@ class Ui_MainWindow(object):
 
             item = QListWidgetItem()
             item_widget = MealListItem(db_id, meal_id, servings)
+            item.setData(Qt.ItemDataRole.UserRole, meal_id)
 
             item_widget.servings_change_requested.connect(lambda meal_id, delta, widget=item_widget:
                                                           self.change_serving(meal_id, delta, widget)
@@ -716,7 +748,7 @@ class Ui_MainWindow(object):
 
         if current_servings + delta == 0:
             DM.removeMeal(meal_id)
-            self.refresh_menus(self.selected_date.toString("yyyy-MM-dd"))
+            self.refresh_menus(self.selected_date)#.toString("yyyy-MM-dd"))
             return
 
         DM.change_servings(meal_id, delta)
@@ -732,7 +764,7 @@ class Ui_MainWindow(object):
         #self.changeMealPlanButton.show()
         date_string = date.toString("yyyy-MM-dd")
 
-        self.refresh_menus(date_string)
+        self.refresh_menus(self.selected_date)
         
     #dialog window that allows user to choose a meal to fill in and with what dish        
     def fill_meal(self):#, date: QDate):

@@ -8,6 +8,34 @@ import IngredientManager as IM
 BASE_DIR = Path(__file__).resolve().parent
 db_path = BASE_DIR / "Database" / "RecipeBook.db"
 
+def apply_defaults(date):
+    date_string = date.toString("yyyy-MM-dd")
+    day_of_week = date.dayOfWeek()
+    connection = sqlite3.connect(str(db_path))
+    cursor = connection.cursor()
+
+    if cursor.execute("SELECT 1 FROM PlannedDays WHERE Date = ?", (date_string,)).fetchone():
+        return
+
+    cursor.execute("INSERT INTO MealPlan (date, meal, recipe_id, servings) SELECT ?, Meal_Type, Recipe_ID, Servings from DefaultMeals WHERE Weekday = ?", (date_string, day_of_week))
+    cursor.execute("INSERT INTO PlannedDays (date) VALUES (?)", (date_string,))
+
+    connection.commit()
+    connection.close()
+
+from PyQt6.QtCore import QDate, Qt
+apply_defaults(QDate.currentDate().addDays(3))
+
+def addDefaultMeal(meal, recipe_id, weekday, servings):
+    connection = sqlite3.connect(str(db_path))
+    cursor = connection.cursor()
+
+    cursor.execute("INSERT INTO DefaultMeals (Meal_Type, Recipe_ID, Weekday, Servings) VALUES (?, ?, ?, ?)", (meal, recipe_id, weekday, servings))
+
+    connection.commit()
+    connection.close()
+
+
 def searchRecipes(term):
     #term = term.replace("\\", "\\\").replace("%", "\\%").replave("_")
     pattern = f"%{term}%"
@@ -116,6 +144,15 @@ def todaysMeals(date):
     connection.close()
     return rows
 
+def meal_recipe(meal_id):
+    connection = sqlite3.connect(str(db_path))
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT recipe_id FROM MealPlan WHERE id = ?", [meal_id])
+
+    recipe_id = cursor.fetchone()
+    return recipe_id[0]
+
 
 def idRecipe(db_id):
     connection = sqlite3.connect(str(db_path))
@@ -125,6 +162,7 @@ def idRecipe(db_id):
 
     recipeTitle = cursor.fetchall()
     return recipeTitle[0][0]
+
 
 def recipeIngredients(db_id):
     connection = sqlite3.connect(str(db_path))

@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QFormLayout, QFrame, QListWidget, QSizePolicy, QVBoxLayout, QWidget, QLabel, QHBoxLayout, QPushButton
+from PyQt6.QtWidgets import QFormLayout, QFrame, QVBoxLayout, QWidget, QLabel, QHBoxLayout, QPushButton
 from PyQt6.QtCore import pyqtSignal
 
 import DatabaseManager as DM
