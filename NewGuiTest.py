@@ -1,5 +1,5 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtWidgets import QMenu, QSpinBox, QAbstractItemView, QWidget, QLineEdit, QListWidget, QFormLayout, QDialog, QPushButton, QHBoxLayout, QVBoxLayout, QListWidgetItem, QLabel
+from PyQt6.QtWidgets import QMenu, QMessageBox, QSpinBox, QAbstractItemView, QWidget, QLineEdit, QListWidget, QFormLayout, QDialog, QPushButton, QHBoxLayout, QVBoxLayout, QListWidgetItem, QLabel
 from PyQt6.QtGui import QIntValidator
 from PyQt6.QtCore import QDate, QSize, Qt, pyqtSignal
 import json
@@ -45,7 +45,7 @@ class DropList(QListWidget):
             self.ui_manager.default_servings
         )
 
-        item.setData(Qt.ItemDataRole.UserRole, db_id)
+        #item.setData(Qt.ItemDataRole.UserRole, db_id)
 
         item_widget.servings_change_requested.connect(
             lambda meal_id, delta, widget=item_widget:
@@ -53,6 +53,7 @@ class DropList(QListWidget):
         )
 
         final_item = QListWidgetItem()
+        final_item.setData(Qt.ItemDataRole.UserRole, meal_id)
         self.addItem(final_item)
         self.setItemWidget(final_item, item_widget)
 
@@ -412,20 +413,89 @@ class Ui_MainWindow(object):
         
         meal_id = clicked_item.data(Qt.ItemDataRole.UserRole)
         recipe_id = DM.meal_recipe(meal_id)
-
+        is_default, default_id = DM.is_default(meal_id)
+        is_delegated = DM.is_delegated(meal_id)
         menu = QMenu(meal_list)
-        default_daily = menu.addAction(f"Make default daily {meal_name.lower()}")
-        default_weekly = menu.addAction(f"Make default {self.selected_date.toString("dddd")} {meal_name.lower()}")
 
-        global_position = meal_list.viewport().mapToGlobal(position)
-        selected_action = menu.exec(global_position)
+        actions = {}
 
-        if selected_action == default_daily:
-            for i in range(1, 8):
-                DM.addDefaultMeal(meal_name, recipe_id, i, DM.get_servings(meal_id)[0])
+        def add(text, fn):
+            actions[menu.addAction(text)] = fn
 
-        elif selected_action == default_weekly:
-            DM.addDefaultMeal(meal_name, recipe_id, self.selected_date.dayOfWeek(), DM.get_servings(meal_id)[0])
+        if is_default:
+            add("Remove from defaults", lambda: self.confirm_remove_default(default_id))
+        else:
+            meal_lower = meal_name.lower()
+            day_name = self.selected_date.toString("dddd")
+            day_num = self.selected_date.dayOfWeek()
+            servings = DM.get_servings(meal_id)[0]
+
+            add(f"Make default daily {meal_lower}", lambda: self.make_default(meal_name, recipe_id, range(1,8), servings, meal_id))
+            add(f"Make default {day_name} {meal_lower}", lambda: self.make_default(meal_name, recipe_id, [day_num], servings, meal_id))
+
+        add("Undelegate dish" if is_delegated else "Delegate dish", lambda: self.make_delegated(meal_id))
+
+        chosen = menu.exec(meal_list.viewport().mapToGlobal(position))
+
+        if chosen in actions:
+            actions[chosen]()
+
+        """if is_default == True:
+            remove_default = menu.addAction("Remove from defaults")
+            delegate_meal = menu.addAction("Delegate dish")
+            global_position = meal_list.viewport().mapToGlobal(position)
+            selected_action = menu.exec(global_position)
+            if selected_action == remove_default:
+                reply = QMessageBox.information(self.centralwidget, "Remove", "Remove all instances", QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel, QMessageBox.StandardButton.Ok)
+                if reply == QMessageBox.StandardButton.Ok:
+                    DM.remove_default(default_id)
+                    self.refresh_menus(self.selected_date)
+                else:
+                    print("cancel")
+            elif selected_action == delegate_meal:
+                print("delegate")
+        else:
+            default_daily = menu.addAction(f"Make default daily {meal_name.lower()}")
+            default_weekly = menu.addAction(f"Make default {self.selected_date.toString("dddd")} {meal_name.lower()}")
+            if is_delegated == False:
+                delegate_meal = menu.addAction("Delegate dish")
+            else:
+                undelegate_meal = menu.addAction("Undelegate dish")
+
+            global_position = meal_list.viewport().mapToGlobal(position)
+            selected_action = menu.exec(global_position)
+
+            if selected_action == default_daily:
+                for i in range(1, 8):
+                    DM.addDefaultMeal(meal_name, recipe_id, i, DM.get_servings(meal_id)[0])
+
+            elif selected_action == default_weekly:
+                DM.addDefaultMeal(meal_name, recipe_id, self.selected_date.dayOfWeek(), DM.get_servings(meal_id)[0])
+
+            elif selected_action == delegate_meal:
+                DM.delegate_dish(meal_id)
+
+            elif selected_action == undelegate_meal:
+                DM.delegate_dish(meal_id) """
+
+    def confirm_remove_default(self, default_id):
+        reply = QMessageBox.question(
+            self.centralwidget, "Remove default", "Remove all future instances?",
+            QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel,
+            QMessageBox.StandardButton.Ok,
+        )
+
+        if reply == QMessageBox.StandardButton.Ok:
+            DM.remove_default(default_id)
+            self.refresh_menus(self.selected_date)
+
+    def make_delegated(self, meal_id):
+        DM.delegate_dish(meal_id)
+        self.refresh_menus(self.selected_date)
+
+    def make_default(self, meal_name, recipe_id, days, servings, meal_id):
+        DM.addDefaultMeal(meal_name, recipe_id, days, servings, meal_id, self.selected_date.dayOfWeek(), self.selected_date.toString("yyyy-MM-dd"),)
+        self.refresh_menus(self.selected_date)
 
     def filter_recipes(self, text):
         text = text.strip()

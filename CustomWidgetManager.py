@@ -1,5 +1,6 @@
 from PyQt6.QtWidgets import QFormLayout, QFrame, QVBoxLayout, QWidget, QLabel, QHBoxLayout, QPushButton
 from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtGui import QFont
 
 import DatabaseManager as DM
 
@@ -16,7 +17,14 @@ class MealListItem(QWidget):
         self.item_layout = QVBoxLayout(self)
         self.title_layout = QHBoxLayout()
 
+        is_delegated = DM.is_delegated(meal_id)
+
         self.title = QLabel(DM.idRecipe(db_id))
+        if is_delegated:
+            font = QFont()
+            font.setItalic(True)
+            self.title.setFont(font)
+            
         self.serving_label = QLabel(str(servings))
 
         self.minus_button = QPushButton("-")

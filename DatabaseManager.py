@@ -2,36 +2,93 @@ import sqlite3
 import json
 import pandas as pd
 from pathlib import Path
+from PyQt6.QtCore import QDate
 
 import IngredientManager as IM
 
 BASE_DIR = Path(__file__).resolve().parent
 db_path = BASE_DIR / "Database" / "RecipeBook.db"
 
+def is_delegated(meal_id):
+    connection = sqlite3.connect(str(db_path))
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT delegated FROM MealPlan WHERE id = ?", (meal_id,))
+    if cursor.fetchone()[0] == 0:
+        return False
+    else:
+        return True
+
+def delegate_dish(meal_id):
+    connection = sqlite3.connect(str(db_path))
+    cursor = connection.cursor()
+
+    if is_delegated(meal_id):
+        delegation = 0
+    else:
+        delegation = 1
+
+    cursor.execute("UPDATE MealPlan SET delegated = ? WHERE id = ?", (delegation, meal_id,))
+
+    connection.commit()
+    connection.close()
+
+
+def is_default(meal_id):
+    connection = sqlite3.connect(str(db_path))
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT DefaultId FROM MealPlan WHERE id = ?", (meal_id,))
+    default_id = cursor.fetchone()[0]
+
+    connection.commit()
+    connection.close()
+    if default_id != None:
+        return (True, default_id) 
+    else:
+        return (False, default_id)
+
+
+def remove_default(default_id):
+    today_string = QDate.currentDate().toString("yyyy-MM-dd")
+
+    connection = sqlite3.connect(str(db_path))
+    cursor = connection.cursor()
+
+    cursor.execute("DELETE FROM MealPlan WHERE DefaultId = ? AND date >= ?", (default_id, today_string),)
+    cursor.execute("UPDATE MealPlan SET DefaultId = NULL WHERE DefaultId = ?", (default_id,))
+    cursor.execute("DELETE FROM DefaultMeals WHERE ID = ?", (default_id,))
+
+    connection.commit()
+    connection.close
+
 def apply_defaults(date):
     date_string = date.toString("yyyy-MM-dd")
     day_of_week = date.dayOfWeek()
+
     connection = sqlite3.connect(str(db_path))
     cursor = connection.cursor()
 
     if cursor.execute("SELECT 1 FROM PlannedDays WHERE Date = ?", (date_string,)).fetchone():
         return
 
-    cursor.execute("INSERT INTO MealPlan (date, meal, recipe_id, servings) SELECT ?, Meal_Type, Recipe_ID, Servings from DefaultMeals WHERE Weekday = ?", (date_string, day_of_week))
+    cursor.execute("INSERT INTO MealPlan (date, meal, recipe_id, servings, DefaultId) SELECT ?, Meal_Type, Recipe_ID, Servings, ID from DefaultMeals WHERE Weekday = ?", (date_string, day_of_week))
     cursor.execute("INSERT INTO PlannedDays (date) VALUES (?)", (date_string,))
 
     connection.commit()
     connection.close()
 
-from PyQt6.QtCore import QDate, Qt
-apply_defaults(QDate.currentDate().addDays(3))
-
 def addDefaultMeal(meal, recipe_id, weekday, servings):
+    today_string = QDate.currentDate().toString("yyyy-MM-dd")
     connection = sqlite3.connect(str(db_path))
     cursor = connection.cursor()
 
     cursor.execute("INSERT INTO DefaultMeals (Meal_Type, Recipe_ID, Weekday, Servings) VALUES (?, ?, ?, ?)", (meal, recipe_id, weekday, servings))
 
+    default_id = cursor.lastrowid
+
+    cursor.execute("INSERT OR IGNORE INTO MealPlan(date, meal, recipe_id, servings, DefaultId) SELECT DISTINCT date, ?, ?, ?, ? FROM MealPlan WHERE date >= ? AND (CAST(strftime('%w', Date) AS INTEGER) + 6) % 7 + 1 = ?", (meal, recipe_id, servings, default_id, today_string, weekday))
+    
     connection.commit()
     connection.close()
 
@@ -71,7 +128,7 @@ def daysAhead(dates):
     connection = sqlite3.connect(str(db_path))
     cursor = connection.cursor()
 
-    cursor.execute("SELECT date, recipe_id, servings FROM MealPlan WHERE date BETWEEN ? AND ?", dates)
+    cursor.execute("SELECT date, recipe_id, servings, delegated FROM MealPlan WHERE date BETWEEN ? AND ?", dates)
     rows = cursor.fetchall()
     connection.close()
     return rows
@@ -152,6 +209,7 @@ def meal_recipe(meal_id):
 
     recipe_id = cursor.fetchone()
     return recipe_id[0]
+
 
 
 def idRecipe(db_id):
